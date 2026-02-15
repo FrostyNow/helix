@@ -69,6 +69,10 @@ if (CLIENT) then
 	end
 
 	function PLUGIN:GetCharacterDescription(client)
+		if (!IsValid(client) or !IsValid(LocalPlayer())) then
+			return
+		end
+
 		if (client:GetCharacter() and client != LocalPlayer() and LocalPlayer():GetCharacter() and
 			!LocalPlayer():GetCharacter():DoesRecognize(client:GetCharacter()) and !hook.Run("IsPlayerRecognized", client)) then
 			return L"noRecog"
@@ -82,6 +86,10 @@ if (CLIENT) then
 	end
 
 	function PLUGIN:GetCharacterName(client, chatType)
+		if (!IsValid(client) or !IsValid(LocalPlayer())) then
+			return
+		end
+
 		if (client != LocalPlayer()) then
 			local character = client:GetCharacter()
 			local ourCharacter = LocalPlayer():GetCharacter()

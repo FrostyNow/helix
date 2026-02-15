@@ -159,8 +159,22 @@ function ix.chat.Register(chatType, data)
 			end
 
 			local translated = L2(chatType.."Format", name, text)
+			local formatted = translated or string.format(self.format, name, text)
 
-			chat.AddText(color, translated or string.format(self.format, name, text))
+			if (self.noNameColor and !anonymous and IsValid(speaker)) then
+				local nameStart, nameEnd = formatted:find(name, 1, true)
+
+				if (nameStart and nameEnd) then
+					local beforeName = formatted:sub(1, nameStart - 1)
+					local afterName = formatted:sub(nameEnd + 1)
+
+					chat.AddText(color, beforeName, speaker, color, afterName)
+
+					return
+				end
+			end
+
+			chat.AddText(color, formatted)
 		end
 	end
 
@@ -403,6 +417,7 @@ do
 		-- The default in-character chat.
 		ix.chat.Register("ic", {
 			format = "%s says \"%s\"",
+			noNameColor = true,
 			indicator = "chatTalking",
 			GetColor = function(self, speaker, text)
 				-- If you are looking at the speaker, make it greener to easier identify who is talking.
@@ -419,6 +434,7 @@ do
 		-- Actions and such.
 		ix.chat.Register("me", {
 			format = "** %s %s",
+			noNameColor = true,
 			GetColor = ix.chat.classes.ic.GetColor,
 			CanHear = ix.config.Get("chatRange", 280) * 2,
 			prefix = {"/Me", "/Action"},
@@ -444,6 +460,7 @@ do
 		-- Whisper chat.
 		ix.chat.Register("w", {
 			format = "%s whispers \"%s\"",
+			noNameColor = true,
 			GetColor = function(self, speaker, text)
 				local color = ix.chat.classes.ic:GetColor(speaker, text)
 
@@ -460,6 +477,7 @@ do
 		-- Yelling out loud.
 		ix.chat.Register("y", {
 			format = "%s yells \"%s\"",
+			noNameColor = true,
 			GetColor = function(self, speaker, text)
 				local color = ix.chat.classes.ic:GetColor(speaker, text)
 
@@ -546,7 +564,21 @@ do
 				speaker.ixLastLOOC = CurTime()
 			end,
 			OnChatAdd = function(self, speaker, text)
-				chat.AddText(Color(255, 50, 50), "[LOOC] ", ix.config.Get("chatColor"), speaker:Name()..": "..text)
+				local icon = "icon16/user.png"
+
+				if (speaker:IsSuperAdmin()) then
+					icon = "icon16/shield.png"
+				elseif (speaker:IsAdmin()) then
+					icon = "icon16/star.png"
+				elseif (speaker:IsUserGroup("moderator") or speaker:IsUserGroup("operator")) then
+					icon = "icon16/wrench.png"
+				elseif (speaker:IsUserGroup("vip") or speaker:IsUserGroup("donator") or speaker:IsUserGroup("donor")) then
+					icon = "icon16/heart.png"
+				end
+
+				icon = Material(hook.Run("GetPlayerIcon", speaker) or icon)
+
+				chat.AddText(icon, Color(255, 50, 50), "[LOOC] ", speaker, ix.config.Get("chatColor"), ": "..text)
 			end,
 			CanHear = ix.config.Get("chatRange", 280),
 			prefix = {".//", "[[", "/LOOC"},

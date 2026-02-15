@@ -111,6 +111,10 @@ if (CLIENT) then
 		end
 	end
 else
+	local function IsObserverMode(client)
+		return IsValid(client) and client:IsPlayer() and client.ixObserverMode == true
+	end
+
 	ix.log.AddType("observerEnter", function(client, ...)
 		return string.format("%s entered observer.", client:Name())
 	end)
@@ -138,6 +142,7 @@ else
 	function PLUGIN:PlayerNoClip(client, state)
 		if (hook.Run("CanPlayerEnterObserver", client)) then
 			if (state) then
+				client.ixObserverMode = true
 				client.ixObsData = {client:GetPos(), client:EyeAngles()}
 
 				-- Hide them so they are not visible.
@@ -150,6 +155,7 @@ else
 
 				hook.Run("OnPlayerObserve", client, state)
 			else
+				client.ixObserverMode = false
 				if (client.ixObsData) then
 					-- Move they player back if they want.
 					if (ix.option.Get(client, "observerTeleportBack", true)) then
@@ -177,6 +183,23 @@ else
 				hook.Run("OnPlayerObserve", client, state)
 			end
 
+			return true
+		end
+	end
+
+	function PLUGIN:PlayerShouldTakeDamage(client, attacker)
+		if (IsObserverMode(client)) then
+			return false
+		end
+	end
+
+	function PLUGIN:EntityTakeDamage(entity, dmgInfo)
+		if (!IsValid(entity) or !entity:IsPlayer()) then
+			return
+		end
+
+		if (IsObserverMode(entity)) then
+			dmgInfo:SetDamage(0)
 			return true
 		end
 	end

@@ -823,6 +823,11 @@ if (SERVER) then
 				targetInv = bagInv
 			end
 
+			-- Check if there's space BEFORE checking permissions
+			if (!x or !y) then
+				return false, "noFit"
+			end
+
 			-- we need to check for owner since the item instance already exists
 			if (!item.bAllowMultiCharacterInteraction and IsValid(client) and client:GetCharacter() and
 				item:GetPlayerID() == client:SteamID64() and item:GetCharacterID() != client:GetCharacter():GetID()) then
@@ -876,6 +881,11 @@ if (SERVER) then
 
 			if (bagInv) then
 				targetInv = bagInv
+			end
+
+			-- Check if there's space BEFORE checking permissions
+			if (!x or !y) then
+				return false, "noFit"
 			end
 
 			if (hook.Run("CanTransferItem", item, ix.item.inventories[0], targetInv) == false) then

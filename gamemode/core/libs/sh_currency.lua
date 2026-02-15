@@ -24,12 +24,31 @@ end
 --- Returns a formatted string according to the current currency.
 -- @realm shared
 -- @number amount The amount of cash being formatted.
+-- @player client Optional client for server-side localization.
 -- @treturn string The formatted string.
-function ix.currency.Get(amount)
-	if (amount == 1) then
-		return ix.currency.symbol.."1 "..ix.currency.singular
+function ix.currency.Get(amount, client)
+	local singular, plural
+	
+	if (CLIENT) then
+		-- Try to localize, fall back to literal string if not a language key
+		singular = L2(ix.currency.singular) or ix.currency.singular
+		plural = L2(ix.currency.plural) or ix.currency.plural
 	else
-		return ix.currency.symbol..amount.." "..ix.currency.plural
+		-- Server-side: use client parameter for localization if provided
+		if (client) then
+			singular = L2(ix.currency.singular, client) or ix.currency.singular
+			plural = L2(ix.currency.plural, client) or ix.currency.plural
+		else
+			-- No client provided, use literal strings
+			singular = ix.currency.singular
+			plural = ix.currency.plural
+		end
+	end
+	
+	if (amount == 1) then
+		return ix.currency.symbol.."1 "..singular
+	else
+		return ix.currency.symbol..amount.." "..plural
 	end
 end
 

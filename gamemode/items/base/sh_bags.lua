@@ -33,8 +33,6 @@ ITEM.functions.View = {
 				panel:SetTitle(item.GetName and item:GetName() or L(item.name))
 
 				if (parent != ix.gui.menuInventoryContainer) then
-					panel:Center()
-
 					if (parent == ix.gui.openedStorage) then
 						panel:MakePopup()
 					end

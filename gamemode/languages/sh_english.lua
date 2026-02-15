@@ -414,6 +414,7 @@ LANGUAGE = {
 	cmdGiveMoney = "Gives a specified amount of money to the person you are looking at.",
 	cmdCharSetMoney = "Changes the total amount of money of someone to the amount specified.",
 	cmdDropMoney = "Drops the specified amount of money in a little box in front of you.",
+	cmdSpawnMoney = "Spawns the specified amount of money at your look position.",
 	cmdPlyWhitelist = "Allows someone to create a character in the specified faction.",
 	cmdCharGetUp = "Attempts to stand back up after having fallen over.",
 	cmdPlyUnwhitelist = "Disallows someone to create a character in the specified faction.",

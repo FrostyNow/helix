@@ -97,7 +97,7 @@ if (SERVER) then
 	end, FLAG_DANGER)
 
 	ix.log.AddType("money", function(client, amount)
-		return L("%s has %s %s.", client:Name(), amount < 0 and "lost" or "gained", ix.currency.Get(math.abs(amount)))
+		return L("%s has %s %s.", client:Name(), amount < 0 and "lost" or "gained", ix.currency.Get(math.abs(amount), client))
 	end, FLAG_SUCCESS)
 
 	ix.log.AddType("inventoryAdd", function(client, characterName, itemName, itemID)
@@ -110,18 +110,20 @@ if (SERVER) then
 
 	ix.log.AddType("storageMoneyTake", function(client, entity, amount, total)
 		local name = entity.GetDisplayName and entity:GetDisplayName() or entity:GetName()
+		local currencyName = L2(ix.currency.plural, client) or ix.currency.plural
 
 		return string.format("%s has taken %d %s from '%s' #%d (%d %s left).",
-			client:GetName(), amount, ix.currency.plural, name,
-			entity:GetInventory():GetID(), total, ix.currency.plural)
+			client:GetName(), amount, currencyName, name,
+			entity:GetInventory():GetID(), total, currencyName)
 	end)
 
 	ix.log.AddType("storageMoneyGive", function(client, entity, amount, total)
 		local name = entity.GetDisplayName and entity:GetDisplayName() or entity:GetName()
+		local currencyName = L2(ix.currency.plural, client) or ix.currency.plural
 
 		return string.format("%s has given %d %s to '%s' #%d (%d %s left).",
-			client:GetName(), amount, ix.currency.plural, name,
-			entity:GetInventory():GetID(), total, ix.currency.plural)
+			client:GetName(), amount, currencyName, name,
+			entity:GetInventory():GetID(), total, currencyName)
 	end)
 
 	ix.log.AddType("roll", function(client, value, max)

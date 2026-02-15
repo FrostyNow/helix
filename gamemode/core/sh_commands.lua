@@ -313,6 +313,42 @@ ix.command.Add("CharGiveItem", {
 	end
 })
 
+ix.command.Add("SpawnItem", {
+	description = "@cmdSpawnItem",
+	superAdminOnly = true,
+	arguments = {
+		ix.type.string,
+		bit.bor(ix.type.number, ix.type.optional)
+	},
+	OnRun = function(self, client, item, amount)
+		local uniqueID = item:lower()
+
+		if (!ix.item.list[uniqueID]) then
+			for k, v in SortedPairs(ix.item.list) do
+				if (ix.util.StringMatches(v.name, uniqueID)) then
+					uniqueID = k
+
+					break
+				end
+			end
+		end
+
+		if (!ix.item.list[uniqueID]) then
+			return "@invalidItem"
+		end
+
+		amount = amount or 1
+		local trace = client:GetEyeTrace()
+		local position = trace.HitPos + trace.HitNormal * 16
+
+		for i = 1, amount do
+			ix.item.Spawn(uniqueID, position + Vector(math.random(-16, 16), math.random(-16, 16), 0))
+		end
+
+		return "@itemCreated"
+	end
+})
+
 ix.command.Add("CharKick", {
 	description = "@cmdCharKick",
 	adminOnly = true,
@@ -443,14 +479,14 @@ do
 
 				if (IsValid(target) and target:IsPlayer() and target:GetCharacter()) then
 					if (!client:GetCharacter():HasMoney(amount)) then
-						return
+						return "@insufficientMoney"
 					end
 
 					target:GetCharacter():GiveMoney(amount)
 					client:GetCharacter():TakeMoney(amount)
 
-					target:NotifyLocalized("moneyTaken", ix.currency.Get(amount))
-					client:NotifyLocalized("moneyGiven", ix.currency.Get(amount))
+					target:NotifyLocalized("moneyTaken", ix.currency.Get(amount, target))
+					client:NotifyLocalized("moneyGiven", ix.currency.Get(amount, client))
 				end
 			end
 		})
@@ -471,7 +507,7 @@ do
 				end
 
 				target:SetMoney(amount)
-				client:NotifyLocalized("setMoney", target:GetName(), ix.currency.Get(amount))
+				client:NotifyLocalized("setMoney", target:GetName(), ix.currency.Get(amount, client))
 			end
 		})
 
@@ -497,6 +533,27 @@ do
 				local money = ix.currency.Spawn(client, amount)
 				money.ixCharID = client:GetCharacter():GetID()
 				money.ixSteamID = client:SteamID()
+			end
+		})
+
+		ix.command.Add("Spawn" .. MONEY_NAME, {
+			alias = {"SpawnMoney"},
+			description = "@cmdSpawnMoney",
+			superAdminOnly = true,
+			arguments = ix.type.number,
+			OnRun = function(self, client, amount)
+				amount = math.Round(amount)
+
+				if (amount <= 0) then
+					return "@invalidArg", 1
+				end
+
+				local trace = client:GetEyeTrace()
+				local position = trace.HitPos + trace.HitNormal * 16
+
+				ix.currency.Spawn(position, amount)
+
+				return "@moneyTaken", ix.currency.Get(amount)
 			end
 		})
 	end)

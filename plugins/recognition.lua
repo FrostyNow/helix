@@ -53,14 +53,17 @@ do
 			return true
 		end
 	end
-end
 
-if (CLIENT) then
-	CHAT_RECOGNIZED = CHAT_RECOGNIZED or {}
-	CHAT_RECOGNIZED["ic"] = true
-	CHAT_RECOGNIZED["y"] = true
-	CHAT_RECOGNIZED["w"] = true
-	CHAT_RECOGNIZED["me"] = true
+	local CHAT_RECOGNIZED = {
+		["ic"] = true,
+		["me"] = true,
+		["yell"] = true,
+		["whisper"] = true,
+		["radio"] = true,
+		["radio_yell"] = true,
+		["radio_whisper"] = true,
+		["vortigese"] = true
+	}
 
 	function PLUGIN:IsRecognizedChatType(chatType)
 		if (CHAT_RECOGNIZED[chatType]) then
@@ -110,6 +113,73 @@ if (CLIENT) then
 		end
 	end
 
+	-- Override chat color for unrecognized characters
+	function PLUGIN:GetPlayerChatColor(client, chatClass)
+		if (!IsValid(client) or !IsValid(LocalPlayer())) then
+			return
+		end
+		
+		-- Special chats that ALWAYS use their own color regardless of recognition
+		if chatClass then
+			local chatID = chatClass.uniqueID
+			local specialChats = {
+				["dispatch"] = true,
+				["broadcast"] = true,
+				["request"] = true,
+				["radio_eavesdrop"] = true,
+				["request_eavesdrop"] = true,
+				["radio_eavesdrop_yell"] = true,
+				["radio_eavesdrop_whisper"] = true,
+				["radio_overhear"] = true,
+			}
+			
+			if specialChats[chatID] then
+				-- Use dynamic color if GetColor function exists, otherwise use static color
+				if chatClass.GetColor then
+					return chatClass:GetColor(client, "")
+				else
+					return chatClass.color or ix.config.Get("chatColor")
+				end
+			end
+		end
+		
+		if (client != LocalPlayer()) then
+			local character = client:GetCharacter()
+			local ourCharacter = LocalPlayer():GetCharacter()
+
+			if (ourCharacter and character and !ourCharacter:DoesRecognize(character) and !hook.Run("IsPlayerRecognized", client)) then
+				-- For unrecognized characters in IC-related chats, use chat color
+				if chatClass then
+					local chatID = chatClass.uniqueID
+					local icChats = {
+						["ic"] = true,
+						["me"] = true,
+						["w"] = true,
+						["y"] = true,
+						["radio"] = true,
+						["radio_yell"] = true,
+						["radio_whisper"] = true,
+					}
+					
+					if icChats[chatID] then
+						-- Use dynamic color if GetColor function exists (for IC looking-at-speaker green)
+						if chatClass.GetColor then
+							return chatClass:GetColor(client, "")
+						else
+							return chatClass.color or ix.config.Get("chatColor")
+						end
+					end
+				end
+				
+				-- For non-IC chats (ooc, looc, etc.), use faction color
+				return
+			end
+		end
+		
+		-- Recognized characters or self: use faction color (return nil)
+		return
+	end
+
 	local function Recognize(level)
 		net.Start("ixRecognize")
 			net.WriteUInt(level, 2)
@@ -135,14 +205,19 @@ if (CLIENT) then
 		menu:Center()
 	end)
 
+
 	net.Receive("ixRecognizeDone", function(length)
 		hook.Run("CharacterRecognized")
 	end)
-
-	function PLUGIN:CharacterRecognized(client, recogCharID)
-		surface.PlaySound("buttons/button17.wav")
+	
+	if (CLIENT) then
+		function PLUGIN:CharacterRecognized(client, recogCharID)
+			surface.PlaySound("buttons/button17.wav")
+		end
 	end
-else
+end
+
+if (SERVER) then
 	util.AddNetworkString("ixRecognize")
 	util.AddNetworkString("ixRecognizeMenu")
 	util.AddNetworkString("ixRecognizeDone")

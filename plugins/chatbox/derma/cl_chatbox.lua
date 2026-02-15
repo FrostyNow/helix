@@ -332,10 +332,11 @@ function PANEL:AddLine(elements, bShouldScroll)
 		elseif (istable(v) and v.r and v.g and v.b) then
 			buffer[#buffer + 1] = string.format("<color=%d,%d,%d>", v.r, v.g, v.b)
 		elseif (type(v) == "Player") then
-			local color = team.GetColor(v:Team())
+			local color = hook.Run("GetPlayerChatColor", v, CHAT_CLASS) or team.GetColor(v:Team())
+			local name = hook.Run("GetCharacterName", v, CHAT_CLASS and CHAT_CLASS.uniqueID) or v:GetName()
 
 			buffer[#buffer + 1] = string.format("<color=%d,%d,%d>%s", color.r, color.g, color.b,
-				v:GetName():gsub("<", "&lt;"):gsub(">", "&gt;"))
+				name:gsub("<", "&lt;"):gsub(">", "&gt;"))
 		else
 			buffer[#buffer + 1] = tostring(v):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub("%b**", function(value)
 				local inner = value:utf8sub(2, -2)

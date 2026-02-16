@@ -78,10 +78,11 @@ ix.anim.citizen_male = {
 	},
 	glide = ACT_GLIDE,
 	vehicle = {
-		["prop_vehicle_prisoner_pod"] = {"podpose", Vector(-3, 0, 0)},
-		["prop_vehicle_jeep"] = {ACT_BUSY_SIT_CHAIR, Vector(14, 0, -14)},
-		["prop_vehicle_airboat"] = {ACT_BUSY_SIT_CHAIR, Vector(8, 0, -20)},
-		chair = {ACT_BUSY_SIT_CHAIR, Vector(1, 0, -23)}
+		["prop_vehicle_prisoner_pod"] = {"podpose", Vector(0, 0, 10)},
+		["prop_vehicle_jeep"] = {ACT_BUSY_SIT_CHAIR, Vector(20, 0, -10)},
+		["prop_vehicle_jalopy"] = {ACT_BUSY_SIT_CHAIR, Vector(22, 0, -10)},
+		["prop_vehicle_airboat"] = {ACT_BUSY_SIT_CHAIR, Vector(10, 0, -16)},
+		chair = {ACT_BUSY_SIT_CHAIR, Vector(16, 0, -21)}
 	},
 }
 

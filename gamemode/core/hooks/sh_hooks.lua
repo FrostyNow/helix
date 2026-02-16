@@ -95,7 +95,7 @@ function GM:TranslateActivity(client, act)
 			local fixVector = clientInfo.ixAnimTable[2]
 
 			if (isvector(fixVector)) then
-				client:SetLocalPos(animationFixOffset)
+				client:SetLocalPos(fixVector)
 			end
 
 			if (isstring(act)) then
@@ -263,10 +263,15 @@ local function UpdateAnimationTable(client, vehicle)
 	if (IsValid(client) and IsValid(vehicle)) then
 		local vehicleClass = vehicle:IsChair() and "chair" or vehicle:GetClass()
 
+		if (vehicleClass == "prop_vehicle_prisoner_pod" and vehicle:GetModel() and !string.find(string.lower(vehicle:GetModel()), "prisoner_pod")) then
+			vehicleClass = "chair"
+		end
+
 		if (baseTable.vehicle and baseTable.vehicle[vehicleClass]) then
 			client.ixAnimTable = baseTable.vehicle[vehicleClass]
 		else
-			client.ixAnimTable = baseTable.normal[ACT_MP_CROUCH_IDLE]
+			-- Use proper sitting animation as fallback for chairs instead of cover animation
+			client.ixAnimTable = baseTable.vehicle and baseTable.vehicle.chair or {ACT_BUSY_SIT_CHAIR, Vector(0, 0, 0)}
 		end
 	else
 		client.ixAnimTable = baseTable[client.ixAnimHoldType]
@@ -629,6 +634,7 @@ if (SERVER) then
 
 	function GM:PlayerEnteredVehicle(client, vehicle, role)
 		UpdateAnimationTable(client)
+		client:SetCollisionGroup(COLLISION_GROUP_WEAPON)
 
 		net.Start("PlayerVehicle")
 			net.WriteEntity(client)
@@ -639,6 +645,7 @@ if (SERVER) then
 
 	function GM:PlayerLeaveVehicle(client, vehicle)
 		UpdateAnimationTable(client)
+		client:SetCollisionGroup(COLLISION_GROUP_PLAYER)
 
 		net.Start("PlayerVehicle")
 			net.WriteEntity(client)

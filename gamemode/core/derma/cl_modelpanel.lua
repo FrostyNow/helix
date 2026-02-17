@@ -6,7 +6,8 @@ local MODEL_ANGLE = Angle(0, 45, 0)
 
 function PANEL:Init()
 	self.brightness = 1
-	self:SetCursor("none")
+	self:SetCursor("arrow")
+	self:SetMouseInputEnabled(true)
 end
 
 function PANEL:SetModel(model, skin, bodygroups)
@@ -64,17 +65,31 @@ function PANEL:SetModel(model, skin, bodygroups)
 	self.Entity = entity
 end
 
-function PANEL:LayoutEntity()
+function PANEL:LayoutEntity(entity)
+	-- Enable smooth drag rotation
+	if (self.bDragging) then
+		local mx = gui.MouseX() - self.iDragStartX
+		local my = gui.MouseY() - self.iDragStartY
+		
+		self.aLookAngle = self.aDragStartAngle + Angle(my * 0.5, -mx * 0.5, 0)
+	end
+	
+	-- Set the model angle
+	if (self.aLookAngle) then
+		entity:SetAngles(self.aLookAngle)
+	else
+		entity:SetAngles(MODEL_ANGLE)
+	end
+	
+	-- Update head tracking
 	local scrW, scrH = ScrW(), ScrH()
 	local xRatio = gui.MouseX() / scrW
 	local yRatio = gui.MouseY() / scrH
 	local x, _ = self:LocalToScreen(self:GetWide() / 2)
 	local xRatio2 = x / scrW
-	local entity = self.Entity
-
+	
 	entity:SetPoseParameter("head_pitch", yRatio*90 - 30)
 	entity:SetPoseParameter("head_yaw", (xRatio - xRatio2)*90 - 5)
-	entity:SetAngles(MODEL_ANGLE)
 	entity:SetIK(false)
 
 	if (self.copyLocalSequence) then
@@ -83,6 +98,23 @@ function PANEL:LayoutEntity()
 	end
 
 	self:RunAnimation()
+end
+
+function PANEL:OnMousePressed(code)
+	if (code == MOUSE_LEFT) then
+		self.bDragging = true
+		self.iDragStartX = gui.MouseX()
+		self.iDragStartY = gui.MouseY()
+		self.aDragStartAngle = self.aLookAngle or MODEL_ANGLE
+		self:MouseCapture(true)
+	end
+end
+
+function PANEL:OnMouseReleased(code)
+	if (code == MOUSE_LEFT) then
+		self.bDragging = false
+		self:MouseCapture(false)
+	end
 end
 
 function PANEL:DrawModel()
@@ -114,7 +146,6 @@ function PANEL:DrawModel()
 	end
 end
 
-function PANEL:OnMousePressed()
-end
+
 
 vgui.Register("ixModelPanel", PANEL, "DModelPanel")

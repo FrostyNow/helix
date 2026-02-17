@@ -464,5 +464,9 @@ LANGUAGE = {
 	iconEditorAlignFront = "Align from Front",
 	iconEditorAlignAbove = "Align from Above",
 	iconEditorAlignRight = "Align from Right",
-	iconEditorAlignCenter = "Align from Center"
+	iconEditorAlignCenter = "Align from Center",
+	
+	gender = "Gender",
+	gender_male = "Male",
+	gender_female = "Female"
 }

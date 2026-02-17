@@ -94,6 +94,34 @@ function PANEL:Init()
 	self.descriptionModel:SetFOV(modelFOV - 13)
 	self.descriptionModel.PaintModel = self.descriptionModel.Paint
 
+	-- Face closeup panel
+	self.descriptionFace = descriptionModelList:Add("ixModelPanel")
+	self.descriptionFace:SetSize(ScreenScale(64), ScreenScale(64))
+	self.descriptionFace:SetPos(4, halfHeight - ScreenScale(64) - 4)
+	self.descriptionFace:SetModel(self.factionModel:GetModel())
+	self.descriptionFace:SetMouseInputEnabled(false) -- Disable rotation
+	self.descriptionFace.PaintModel = self.descriptionFace.Paint
+	
+	self.descriptionFace.LayoutEntity = function(this, entity)
+		local headBone = entity:LookupBone("ValveBiped.Bip01_Head1")
+		if (headBone) then
+			local headPos = entity:GetBonePosition(headBone)
+			this:SetLookAt(headPos)
+			this:SetCamPos(headPos + entity:GetForward() * 45 + entity:GetUp() * -2)
+			this:SetFOV(20)
+		else
+			this:SetCamPos(Vector(20, 0, 60))
+			this:SetLookAt(Vector(0, 0, 60))
+		end
+		
+		-- Match bodygroups from main model
+		for i = 0, (entity:GetNumBodyGroups() - 1) do
+			entity:SetBodygroup(i, self.descriptionModel.Entity:GetBodygroup(i))
+		end
+		
+		entity:SetSkin(self.descriptionModel.Entity:GetSkin())
+	end
+
 	self.descriptionPanel = self.description:Add("Panel")
 	self.descriptionPanel:SetWide(halfWidth + padding * 2)
 	self.descriptionPanel:Dock(RIGHT)
@@ -105,7 +133,6 @@ function PANEL:Init()
 	descriptionProceed:Dock(BOTTOM)
 	descriptionProceed.DoClick = function()
 		if (self:VerifyProgression("description")) then
-			-- there are no panels on the attributes section other than the create button, so we can just create the character
 			if (#self.attributesPanel:GetChildren() < 2) then
 				self:SendPayload()
 				return
@@ -115,6 +142,10 @@ function PANEL:Init()
 			self:SetActiveSubpanel("attributes")
 		end
 	end
+
+	self.descriptionScroll = self.descriptionPanel:Add("DScrollPanel")
+	self.descriptionScroll:Dock(FILL)
+	self.descriptionScroll:GetCanvas():DockPadding(0, 0, 0, 8)
 
 	-- attributes subpanel
 	self.attributes = self:AddSubpanel("attributes")
@@ -177,6 +208,42 @@ function PANEL:Init()
 				self.descriptionModel:SetModel(model)
 				self.attributesModel:SetModel(model)
 			end
+			
+			if (IsValid(self.descriptionFace)) then
+				self.descriptionFace:SetModel(self.factionModel:GetModel())
+			end
+			
+			-- Reset groups payload when model changes to ensure compatibility? 
+			-- Or just let validity checks handle it.
+			-- Ideally we'd trigger a refresh of the character vars panel but that's complex.
+			-- For now, assumes model switch keeps payload but OnDisplay filters visibility.
+		end
+	end)
+
+	self:AddPayloadHook("groups", function(value)
+		if (!istable(value)) then return end
+		
+		local function UpdateBodygroups(entity)
+			if (!IsValid(entity)) then return end
+			
+			for k, v in pairs(value) do
+				local index = k
+				if (isstring(k)) then
+					index = entity:FindBodygroupByName(k)
+				end
+				
+				if (index > -1) then
+					entity:SetBodygroup(index, v)
+				end
+			end
+		end
+
+		if (IsValid(self.descriptionFace)) then
+			UpdateBodygroups(self.descriptionFace.Entity)
+		end
+		
+		if (IsValid(self.descriptionModel)) then
+			UpdateBodygroups(self.descriptionModel.Entity)
 		end
 	end)
 
@@ -321,12 +388,12 @@ end
 function PANEL:GetContainerPanel(name)
 	-- TODO: yuck
 	if (name == "description") then
-		return self.descriptionPanel
+		return self.descriptionScroll
 	elseif (name == "attributes") then
 		return self.attributesPanel
 	end
 
-	return self.descriptionPanel
+	return self.descriptionScroll
 end
 
 function PANEL:AttachCleanup(panel)
@@ -422,18 +489,22 @@ function PANEL:Populate()
 
 			if (IsValid(panel)) then
 				-- add label for entry
-				local label = container:Add("DLabel")
-				label:SetFont("ixMenuButtonLabelFont")
-				label:SetText(L(k):utf8upper())
-				label:SizeToContents()
-				label:DockMargin(0, 16, 0, 2)
-				label:Dock(TOP)
-
-				-- we need to set the docking order so the label is above the panel
-				label:SetZPos(zPos - 1)
+				if (!v.bSkipLabel) then
+					local label = container:Add("DLabel")
+					label:SetFont("ixMenuButtonLabelFont")
+					label:SetText(L(k):utf8upper())
+					label:SizeToContents()
+					label:DockMargin(0, 16, 0, 2)
+					label:Dock(TOP)
+					
+					-- we need to set the docking order so the label is above the panel
+					label:SetZPos(zPos - 1)
+					
+					self:AttachCleanup(label)
+				end
+				
 				panel:SetZPos(zPos)
 
-				self:AttachCleanup(label)
 				self:AttachCleanup(panel)
 
 				if (v.OnPostSetup) then

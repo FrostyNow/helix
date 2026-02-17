@@ -61,7 +61,19 @@ function GM:PlayerInitialSpawn(client)
 			MsgN("Loaded (" .. table.concat(charList, ", ") .. ") for " .. client:Name())
 
 			for _, v in ipairs(charList) do
-				ix.char.loaded[v]:Sync(client)
+				local character = ix.char.loaded[v]
+				character:Sync(client)
+				
+				-- Sync bodygroup and skin data to client for character selection menu
+				local groups = character:GetData("groups")
+				if (groups) then
+					character:SetData("groups", groups, false, client)
+				end
+				
+				local skin = character:GetData("skin")
+				if (skin) then
+					character:SetData("skin", skin, false, client)
+				end
 			end
 
 			client.ixCharList = charList

@@ -85,7 +85,11 @@ function ITEM:AddOutfit(client)
 	-- restore bodygroups saved to the item
 	if (!table.IsEmpty(groups) and self:ShouldRestoreBodygroups()) then
 		for k, v in pairs(groups) do
-			client:SetBodygroup(k, v)
+			local index = tonumber(k) or client:FindBodygroupByName(k)
+
+			if (index and index > -1) then
+				client:SetBodygroup(index, tonumber(v) or 0)
+			end
 		end
 	-- apply default item bodygroups if none are saved
 	elseif (istable(self.bodyGroups)) then
@@ -189,7 +193,11 @@ function ITEM:RemoveOutfit(client)
 	-- restore original bodygroups
 	if (!table.IsEmpty(groups)) then
 		for k, v in pairs(groups) do
-			client:SetBodygroup(k, v)
+			local index = tonumber(k) or client:FindBodygroupByName(k)
+
+			if (index and index > -1) then
+				client:SetBodygroup(index, tonumber(v) or 0)
+			end
 		end
 
 		character:SetData("groups", character:GetData("oldGroups" .. self.outfitCategory, {}))

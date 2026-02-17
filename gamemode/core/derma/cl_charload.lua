@@ -19,7 +19,16 @@ local function SetCharacter(self, character)
 
 		if (istable(bodygroups)) then
 			for k, v in pairs(bodygroups) do
-				self:SetBodygroup(k, v)
+				if (k == "skin") then
+					self:SetSkin(tonumber(v) or 0)
+					continue
+				end
+
+				local index = tonumber(k) or self:FindBodygroupByName(k)
+
+				if (index and index > -1) then
+					self:SetBodygroup(index, tonumber(v) or 0)
+				end
 			end
 		end
 	else
@@ -326,7 +335,36 @@ function PANEL:Init()
 	self.delete = self:AddSubpanel("delete")
 	self.delete:SetTitle(nil)
 	self.delete.OnSetActive = function()
-		self.deleteModel:SetModel(self.character:GetModel())
+		local model = self.character:GetModel()
+
+		self.deleteModel:SetModel(model)
+		self.deleteModel:SetSkin(self.character:GetData("skin", 0))
+		if (IsValid(self.deleteModel.Entity)) then
+			self.deleteModel.Entity:SetSkin(self.character:GetData("skin", 0))
+		end
+
+		local bodygroups = self.character:GetData("groups", nil)
+
+		if (istable(bodygroups)) then
+			for k, v in pairs(bodygroups) do
+				if (k == "skin") then
+					local skinValue = tonumber(v) or 0
+					self.deleteModel:SetSkin(skinValue)
+
+					if (IsValid(self.deleteModel.Entity)) then
+						self.deleteModel.Entity:SetSkin(skinValue)
+					end
+					continue
+				end
+
+				local index = tonumber(k) or self.deleteModel.Entity:FindBodygroupByName(k)
+
+				if (index and index > -1) then
+					self.deleteModel.Entity:SetBodygroup(index, tonumber(v) or 0)
+				end
+			end
+		end
+
 		self:CreateAnimation(self.animationTime, {
 			index = 2,
 			target = {backgroundFraction = 0},

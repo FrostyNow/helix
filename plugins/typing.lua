@@ -69,7 +69,7 @@ if (CLIENT) then
 	function PLUGIN:GetTypingIndicator(character, text)
 		local prefix = text:utf8sub(1, 1)
 
-		if (!prefix:find(symbolPattern) and text:utf8len() > 1) then
+		if (!prefix:find(symbolPattern) and (text:utf8len() > 1 or #prefix > 1)) then
 			return "ic"
 		else
 			local chatType = ix.chat.Parse(nil, text)

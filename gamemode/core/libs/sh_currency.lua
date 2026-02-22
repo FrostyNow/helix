@@ -35,14 +35,8 @@ function ix.currency.Get(amount, client)
 		plural = L2(ix.currency.plural) or ix.currency.plural
 	else
 		-- Server-side: use client parameter for localization if provided
-		if (client) then
-			singular = L2(ix.currency.singular, client) or ix.currency.singular
-			plural = L2(ix.currency.plural, client) or ix.currency.plural
-		else
-			-- No client provided, use literal strings
-			singular = ix.currency.singular
-			plural = ix.currency.plural
-		end
+		singular = L2(ix.currency.singular, client) or ix.currency.singular
+		plural = L2(ix.currency.plural, client) or ix.currency.plural
 	end
 	
 	if (amount == 1) then

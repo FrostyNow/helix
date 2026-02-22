@@ -491,8 +491,7 @@ do
 			end
 		})
 
-		ix.command.Add("CharSet" .. MONEY_NAME, {
-			alias = {"CharSetMoney"},
+		ix.command.Add("CharSetMoney", {
 			description = "@cmdCharSetMoney",
 			superAdminOnly = true,
 			arguments = {
@@ -511,8 +510,7 @@ do
 			end
 		})
 
-		ix.command.Add("Drop" .. MONEY_NAME, {
-			alias = {"DropMoney"},
+		ix.command.Add("DropMoney", {
 			description = "@cmdDropMoney",
 			arguments = ix.type.number,
 			OnRun = function(self, client, amount)
@@ -536,8 +534,7 @@ do
 			end
 		})
 
-		ix.command.Add("Spawn" .. MONEY_NAME, {
-			alias = {"SpawnMoney"},
+		ix.command.Add("SpawnMoney", {
 			description = "@cmdSpawnMoney",
 			superAdminOnly = true,
 			arguments = ix.type.number,
@@ -553,7 +550,7 @@ do
 
 				ix.currency.Spawn(position, amount)
 
-				return "@moneyTaken", ix.currency.Get(amount)
+				return "@moneyTaken", ix.currency.Get(amount, client)
 			end
 		})
 	end)

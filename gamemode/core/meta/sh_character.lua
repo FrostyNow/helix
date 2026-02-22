@@ -19,6 +19,15 @@ CHAR.__index = CHAR
 CHAR.id = CHAR.id or 0
 CHAR.vars = CHAR.vars or {}
 
+function CHAR:GetClassColor()
+	local class = self:GetClass()
+	local classTable = ix.class.list[class]
+
+	if (classTable and classTable.color) then
+		return classTable.color
+	end
+end
+
 -- @todo not this
 if (!ix.db) then
 	ix.util.Include("../libs/sv_database.lua")

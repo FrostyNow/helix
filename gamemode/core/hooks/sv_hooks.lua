@@ -311,7 +311,7 @@ function GM:PlayerLoadedCharacter(client, character, lastChar)
 					local pay = hook.Run("GetSalaryAmount", client, faction) or faction.pay
 
 					character:GiveMoney(pay)
-					client:NotifyLocalized("salary", ix.currency.Get(pay))
+					client:NotifyLocalized("salary", ix.currency.Get(pay, client))
 				end
 			else
 				timer.Remove(uniqueID)

@@ -58,7 +58,7 @@ else
 	function ENT:OnPopulateEntityInfo(container)
 		local text = container:AddRow("name")
 		text:SetImportant()
-		text:SetText(ix.currency.Get(self:GetAmount()))
+		text:SetText(ix.currency.Get(self:GetAmount(), LocalPlayer()))
 		text:SizeToContents()
 	end
 end

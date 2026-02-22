@@ -11,6 +11,14 @@ See the [Garry's Mod Wiki](https://wiki.garrysmod.com/page/Category:Player) for 
 
 local meta = FindMetaTable("Player")
 
+function meta:GetClassColor()
+	local character = self:GetCharacter()
+
+	if (character) then
+		return character:GetClassColor()
+	end
+end
+
 if (SERVER) then
 	--- Returns the amount of time the player has played on the server.
 	-- @realm shared

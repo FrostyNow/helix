@@ -150,9 +150,8 @@ function ix.chat.Register(chatType, data)
 
 		function data:OnChatAdd(speaker, text, anonymous, info)
 			local color = self.color
-			local name = anonymous and
-				L"someone" or hook.Run("GetCharacterName", speaker, chatType) or
-				(IsValid(speaker) and speaker:Name() or "Console")
+			local characterName = hook.Run("GetCharacterName", speaker, chatType)
+			local name = anonymous and L"someone" or characterName or (IsValid(speaker) and speaker:Name() or "Console")
 
 			if (self.GetColor) then
 				color = self:GetColor(speaker, text, info)
@@ -161,14 +160,23 @@ function ix.chat.Register(chatType, data)
 			local translated = L2(chatType.."Format", name, text)
 			local formatted = translated or string.format(self.format, name, text)
 
+			local classColor = IsValid(speaker) and speaker:GetClassColor()
+			if (classColor and characterName and characterName != speaker:Name()) then
+				classColor = nil
+			end
+
 			if (self.noNameColor and !anonymous and IsValid(speaker)) then
 				local nameStart, nameEnd = formatted:find(name, 1, true)
 
 				if (nameStart and nameEnd) then
 					local beforeName = formatted:sub(1, nameStart - 1)
 					local afterName = formatted:sub(nameEnd + 1)
-
-					chat.AddText(color, beforeName, speaker, color, afterName)
+					
+					if (classColor) then
+						chat.AddText(color, beforeName, classColor, name, color, afterName)
+					else
+						chat.AddText(color, beforeName, speaker, color, afterName)
+					end
 
 					return
 				end
@@ -536,7 +544,12 @@ do
 
 				icon = Material(hook.Run("GetPlayerIcon", speaker) or icon)
 
-				chat.AddText(icon, Color(255, 50, 50), "[OOC] ", speaker, color_white, ": "..text)
+				local classColor = speaker:GetClassColor()
+				if (classColor) then
+					chat.AddText(icon, Color(255, 50, 50), "[OOC] ", classColor, speaker:Name(), color_white, ": "..text)
+				else
+					chat.AddText(icon, Color(255, 50, 50), "[OOC] ", speaker, color_white, ": "..text)
+				end
 			end,
 			prefix = {"//", "/OOC"},
 			description = "@cmdOOC",
@@ -578,7 +591,12 @@ do
 
 				icon = Material(hook.Run("GetPlayerIcon", speaker) or icon)
 
-				chat.AddText(icon, Color(255, 50, 50), "[LOOC] ", speaker, ix.config.Get("chatColor"), ": "..text)
+				local classColor = speaker:GetClassColor()
+				if (classColor) then
+					chat.AddText(icon, Color(255, 50, 50), "[LOOC] ", classColor, speaker:Name(), ix.config.Get("chatColor"), ": "..text)
+				else
+					chat.AddText(icon, Color(255, 50, 50), "[LOOC] ", speaker, ix.config.Get("chatColor"), ": "..text)
+				end
 			end,
 			CanHear = ix.config.Get("chatRange", 280),
 			prefix = {".//", "[[", "/LOOC"},

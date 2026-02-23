@@ -634,7 +634,12 @@ if (SERVER) then
 
 	function GM:PlayerEnteredVehicle(client, vehicle, role)
 		UpdateAnimationTable(client)
-		client:SetCollisionGroup(COLLISION_GROUP_WEAPON)
+
+		if (vehicle.playerdynseat) then
+			client:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
+		else
+			client:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
+		end
 
 		net.Start("PlayerVehicle")
 			net.WriteEntity(client)

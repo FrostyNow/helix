@@ -460,7 +460,7 @@ do
 	hook.Add("InitializedConfig", "ixMoneyCommands", function()
 		local MONEY_NAME = string.gsub(ix.util.ExpandCamelCase(ix.currency.plural), "%s", "")
 
-		ix.command.Add("Give" .. MONEY_NAME, {
+		ix.command.Add("GiveMoney", {
 			alias = {"GiveMoney"},
 			description = "@cmdGiveMoney",
 			arguments = ix.type.number,

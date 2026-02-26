@@ -62,7 +62,9 @@ do
 		["radio"] = true,
 		["radio_yell"] = true,
 		["radio_whisper"] = true,
-		["vortigese"] = true
+		["vortigese"] = true,
+		["request"] = true,
+		["request_eavesdrop"] = true,
 	}
 
 	function PLUGIN:IsRecognizedChatType(chatType)

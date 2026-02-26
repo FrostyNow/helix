@@ -50,7 +50,7 @@ function PANEL:SetLeft(bValue)
 end
 
 function PANEL:SetMoney(money)
-	local name = string.gsub(ix.util.ExpandCamelCase(ix.currency.plural), "%s", "")
+	local name = string.gsub(ix.util.ExpandCamelCase(L2(ix.currency.plural, client)), "%s", "")
 
 	self.money = math.max(math.Round(tonumber(money) or 0), 0)
 	self.moneyLabel:SetText(string.format("%s: %d", name, money))

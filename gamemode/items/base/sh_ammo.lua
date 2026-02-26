@@ -8,10 +8,10 @@ ITEM.ammoAmount = 30 -- amount of the ammo
 ITEM.description = "A Box that contains %s of Pistol Ammo"
 ITEM.category = "Ammunition"
 ITEM.useSound = "items/ammo_pickup.wav"
+ITEM.ammoClip = nil -- How many rounds to use at once. If nil, use all.
 
 function ITEM:GetDescription()
-	local rounds = self:GetData("rounds", self.ammoAmount)
-	return Format(L(self.description, rounds))
+	return Format(L(self.description, self.ammoAmount))
 end
 
 if (CLIENT) then
@@ -30,12 +30,40 @@ ITEM.functions.use = {
 	icon = "icon16/add.png",
 	OnRun = function(item)
 		local rounds = item:GetData("rounds", item.ammoAmount)
+		local amountToGive = rounds
+
+		if (item.ammoClip) then
+			amountToGive = math.min(rounds, item.ammoClip)
+		end
+
+		item.player:GiveAmmo(amountToGive, item.ammo)
+		item.player:EmitSound(item.useSound, 110)
+
+		local remaining = rounds - amountToGive
+		if (remaining > 0) then
+			item:SetData("rounds", remaining)
+			return false
+		end
+
+		return true
+	end,
+}
+
+ITEM.functions.useall = {
+	name = "Load All",
+	tip = "useTip",
+	icon = "icon16/accept.png",
+	OnRun = function(item)
+		local rounds = item:GetData("rounds", item.ammoAmount)
 
 		item.player:GiveAmmo(rounds, item.ammo)
 		item.player:EmitSound(item.useSound, 110)
 
 		return true
 	end,
+	OnCanRun = function(item)
+		return item.ammoClip ~= nil
+	end
 }
 
 -- Called after the item is registered into the item tables.

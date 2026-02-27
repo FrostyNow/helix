@@ -714,11 +714,17 @@ local injTextTable = {
 
 function GM:GetInjuredText(client)
 	local health = client:Health()
+	local fraction = health / client:GetMaxHealth()
 
-	for k, v in pairs(injTextTable) do
-		if ((health / client:GetMaxHealth()) <= k) then
-			return v[1], v[2], v[3]
-		end
+	if (fraction <= 0) then
+		local v = injTextTable[0]
+		return v[1], v[2], v[3]
+	elseif (fraction <= 0.3) then
+		local v = injTextTable[0.3]
+		return v[1], v[2], v[3]
+	elseif (fraction <= 0.6) then
+		local v = injTextTable[0.6]
+		return v[1], v[2], v[3]
 	end
 end
 
@@ -729,34 +735,76 @@ function GM:PopulateImportantCharacterInfo(client, character, container)
 	-- name
 	local name = container:AddRow("name")
 	name:SetImportant()
-	name:SetText(hookRun("GetCharacterName", client) or character:GetName())
 	name:SetBackgroundColor(color)
-	name:SizeToContents()
+
+	name.Think = function(this)
+		local currentName = hookRun("GetCharacterName", client) or character:GetName()
+
+		if (this:GetText() != currentName) then
+			this:SetText(currentName)
+			this:SizeToContents()
+
+			container:SizeToContents()
+		end
+	end
+
+	name:Think()
 
 	-- injured text
-	local injureText, injureTextColor = hookRun("GetInjuredText", client)
+	local injure = container:AddRow("injureText")
+	injure:SetText("")
+	injure:SetTall(0)
 
-	if (injureText) then
-		local injure = container:AddRow("injureText")
+	injure.Think = function(this)
+		local injureText, injureTextColor = hookRun("GetInjuredText", client)
 
-		injure:SetText(L(injureText))
-		injure:SetBackgroundColor(injureTextColor)
-		injure:SizeToContents()
+		if (injureText) then
+			local translated = L(injureText)
+
+			if (this:GetText() != translated) then
+				this:SetText(translated)
+				this:SetBackgroundColor(injureTextColor)
+				this:SizeToContents()
+
+				container:SizeToContents()
+			end
+		elseif (this:GetTall() != 0) then
+			this:SetText("")
+			this:SetTall(0)
+
+			container:SizeToContents()
+		end
 	end
+
+	injure:Think()
 end
 
 function GM:PopulateCharacterInfo(client, character, container)
 	-- description
-	local descriptionText = character:GetDescription()
-	descriptionText = (descriptionText:utf8len() > 128 and
-		string.format("%s...", descriptionText:utf8sub(1, 125)) or
-		descriptionText)
+	local description = container:AddRow("description")
+	description:SetText("")
+	description:SetTall(0)
 
-	if (descriptionText != "") then
-		local description = container:AddRow("description")
-		description:SetText(descriptionText)
-		description:SizeToContents()
+	description.Think = function(this)
+		local descriptionText = character:GetDescription()
+		descriptionText = (descriptionText:utf8len() > 128 and
+			string.format("%s...", descriptionText:utf8sub(1, 125)) or
+			descriptionText)
+
+		if (descriptionText != "" and this:GetText() != descriptionText) then
+			this:SetText(descriptionText)
+			this:SizeToContents()
+
+			container:SizeToContents()
+		elseif (descriptionText == "" and this:GetTall() != 0) then
+			this:SetText("")
+			this:SetTall(0)
+
+			container:SizeToContents()
+		end
 	end
+
+	description:Think()
 end
 
 function GM:KeyRelease(client, key)

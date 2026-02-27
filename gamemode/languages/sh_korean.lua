@@ -275,6 +275,7 @@ LANGUAGE = {
 	toggleESP = "관리자 ESP 사용",
 	chgName = "이름 변경",
 	chgNameDesc = "아래에 캐릭터의 새로운 이름을 입력하세요.",
+	weaponSlotFilled = "다른 %s 무기를 사용할 수 없습니다!",
 	thirdpersonToggle = "3인칭 사용",
 	thirdpersonClassic = "클래식 3인칭 사용",
 	equippedBag = "가방 내부에 사용중인 아이템이 있습니다.",

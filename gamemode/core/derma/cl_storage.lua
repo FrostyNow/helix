@@ -150,7 +150,7 @@ function PANEL:SetLocalMoney(money)
 end
 
 function PANEL:SetStorageTitle(title)
-	self.storageInventory:SetTitle(title)
+	self.storageInventory:SetTitle(L(title))
 end
 
 function PANEL:SetStorageInventory(inventory)

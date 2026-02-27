@@ -55,12 +55,50 @@ SWEP.maxHoldStress = 4000 -- how much stress the held object can undergo before 
 ACT_VM_FISTS_DRAW = 2
 ACT_VM_FISTS_HOLSTER = 1
 
+if (SERVER) then
+	util.AddNetworkString("ixHandsUpdateDistance")
+
+	net.Receive("ixHandsUpdateDistance", function(len, client)
+		local weapon = client:GetActiveWeapon()
+
+		if (IsValid(weapon) and weapon:GetClass() == "ix_hands" and weapon:IsHoldingObject()) then
+			weapon:UpdateHoldDistance(net.ReadBool())
+		end
+	end)
+end
+
+if (CLIENT) then
+	hook.Add("PlayerBindPress", "ixHandsScroll", function(client, bind, pressed)
+		if (client:GetLocalVar("bIsHoldingObject", false) and (bind:find("invnext") or bind:find("invprev"))) then
+			local weapon = client:GetActiveWeapon()
+
+			if (IsValid(weapon) and weapon:GetClass() == "ix_hands") then
+				if (pressed) then
+					net.Start("ixHandsUpdateDistance")
+						net.WriteBool(bind:find("invprev") != nil)
+					net.SendToServer()
+				end
+
+				return true
+			end
+		end
+	end)
+end
+
+function SWEP:SetupDataTables()
+	self:NetworkVar("Float", 0, "HoldDistance")
+end
+
 function SWEP:Initialize()
 	self:SetHoldType(self.HoldType)
 
 	self.lastHand = 0
 	self.maxHoldDistanceSquared = self.maxHoldDistance ^ 2
 	self.heldObjectAngle = Angle(angle_zero)
+
+	if (SERVER) then
+		self:SetHoldDistance(self.holdDistance)
+	end
 end
 
 if (CLIENT) then
@@ -147,7 +185,7 @@ function SWEP:Think()
 		if (self:IsHoldingObject()) then
 			local physics = self:GetHeldPhysicsObject()
 			local bIsRagdoll = self.heldEntity:IsRagdoll()
-			local holdDistance = bIsRagdoll and self.holdDistance * 0.5 or self.holdDistance
+			local holdDistance = bIsRagdoll and self:GetHoldDistance() * 0.5 or self:GetHoldDistance()
 			local targetLocation = self:GetOwner():GetShootPos() + self:GetOwner():GetForward() * holdDistance
 
 			if (bIsRagdoll) then
@@ -241,6 +279,10 @@ function SWEP:PickupObject(entity)
 	self.heldObjectAngle = entity:GetAngles()
 	self.heldEntity = entity
 
+	if (SERVER) then
+		self:SetHoldDistance(self.holdDistance)
+	end
+
 	self.holdEntity = ents.Create("prop_physics")
 	self.holdEntity:SetPos(self.heldEntity:LocalToWorld(self.heldEntity:OBBCenter()))
 	self.holdEntity:SetAngles(self.heldEntity:GetAngles())
@@ -320,6 +362,21 @@ function SWEP:PlayPickupSound(surfaceProperty)
 	end
 
 	self:GetOwner():EmitSound(result, 75, 100, 40)
+end
+
+function SWEP:UpdateHoldDistance(bOut)
+	local step = 4
+	local current = self:GetHoldDistance()
+	local nextDist = bOut and (current + step) or (current - step)
+
+	local max = self.holdDistance
+	local min = 16
+
+	if (IsValid(self.heldEntity)) then
+		min = math.max(min, self.heldEntity:BoundingRadius() + 16)
+	end
+
+	self:SetHoldDistance(math.Clamp(nextDist, min, math.max(min, max)))
 end
 
 function SWEP:Holster()

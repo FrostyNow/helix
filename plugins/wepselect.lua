@@ -133,7 +133,9 @@ if (CLIENT) then
 		local bValid = IsValid(currentWeapon)
 		local bTool
 
-		if (client:InVehicle() or (bValid and currentWeapon:GetClass() == "weapon_physgun" and client:KeyDown(IN_ATTACK))) then
+		if (client:InVehicle() or
+			(bValid and currentWeapon:GetClass() == "weapon_physgun" and client:KeyDown(IN_ATTACK)) or
+			(bValid and currentWeapon:GetClass() == "ix_hands" and client:GetLocalVar("bIsHoldingObject", false))) then
 			return
 		end
 

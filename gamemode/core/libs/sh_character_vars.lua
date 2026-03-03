@@ -145,6 +145,7 @@ ix.char.RegisterVar("groups", {
 			
 			-- Handle skin slider dynamically using Entity
 			local skinData = nil
+			--[[
 			local panel = ix.gui.characterMenu
 			
 			if (IsValid(panel) and IsValid(panel.newCharacterPanel)) then
@@ -162,6 +163,7 @@ ix.char.RegisterVar("groups", {
 					end
 				end
 			end
+			--]]
 			
 			if (!skinData and faction.skinGroups and modelPath) then
 				local lowerPath = string.lower(modelPath)

@@ -13,6 +13,30 @@ local rowPaintFunctions = {
 local PANEL = {}
 local BODYGROUPS_EMPTY = "000000000"
 
+-- Utility for admin info hints
+local function CompactText(text, limit)
+	if (text:utf8len() > limit) then
+		return text:utf8sub(1, limit - 3) .. "..."
+	end
+	return text
+end
+
+local function IsAdminViewingAnonymous(client)
+	if (!LocalPlayer():IsAdmin() or !IsValid(client)) then return false end
+	
+	local localCharacter = LocalPlayer():GetCharacter()
+	local character = client:GetCharacter()
+
+	if (localCharacter and character) then
+		local bRecognize = hook.Run("IsCharacterRecognized", localCharacter, character:GetID()) or hook.Run("IsPlayerRecognized", client)
+		return !bRecognize
+	end
+
+	return false
+end
+
+local adminAnonHintColor = Color(170, 170, 170)
+
 AccessorFunc(PANEL, "model", "Model", FORCE_STRING)
 AccessorFunc(PANEL, "bHidden", "Hidden", FORCE_BOOL)
 
@@ -183,9 +207,15 @@ function PANEL:Init()
 
 	self.realNameHint = self.name:Add("DLabel")
 	self.realNameHint:SetFont("ixAdminAnonHintFont")
-	self.realNameHint:SetTextColor(Color(170, 170, 170))
+	self.realNameHint:SetTextColor(adminAnonHintColor)
 	self.realNameHint:SetMouseInputEnabled(false)
 	self.realNameHint:SetVisible(false)
+
+	self.realDescriptionHint = self.description:Add("DLabel")
+	self.realDescriptionHint:SetFont("ixAdminAnonHintFont")
+	self.realDescriptionHint:SetTextColor(adminAnonHintColor)
+	self.realDescriptionHint:SetMouseInputEnabled(false)
+	self.realDescriptionHint:SetVisible(false)
 end
 
 function PANEL:Update()
@@ -228,24 +258,49 @@ function PANEL:Update()
 		self.description:SizeToContents()
 	end
 
-	-- Real name hint for admins
-	local bIsAdmin = LocalPlayer():IsAdmin()
-	if (bIsAdmin and IsValid(character) and name != character:GetName()) then
-		local realName = character:GetName()
-		self.realNameHint:SetText(" (" .. realName .. ")")
-		self.realNameHint:SizeToContents()
+	-- Real info hints for admins
+	local target = self.player
+	local character = IsValid(target) and target:GetCharacter()
+	local showHints = IsAdminViewingAnonymous(target) and character
 
-		surface.SetFont(self.name:GetFont())
-		local nameWidth = select(1, surface.GetTextSize(name))
-		
-		local x, y = self.name:GetPos()
-		self.realNameHint:SetParent(self) 
-		self.realNameHint:SetPos(x + nameWidth + 4, y)
-		self.realNameHint:SetTall(self.name:GetTall())
-		self.realNameHint:SetContentAlignment(4)
-		self.realNameHint:SetVisible(true)
+	if (!showHints) then
+		if (IsValid(self.realNameHint)) then
+			self.realNameHint:SetVisible(false)
+		end
+
+		if (IsValid(self.realDescriptionHint)) then
+			self.realDescriptionHint:SetVisible(false)
+		end
 	else
-		self.realNameHint:SetVisible(false)
+		local displayedName = self.name:GetText()
+		local realName = character:GetVar("name") or character:GetName()
+
+		if (displayedName != realName and IsValid(self.realNameHint)) then
+			self.realNameHint:SetText(" (" .. CompactText(realName, 48) .. ")")
+			self.realNameHint:SizeToContents()
+
+			surface.SetFont(self.name:GetFont())
+			local nameWidth = select(1, surface.GetTextSize(displayedName))
+			self.realNameHint:SetPos(nameWidth + 4, 0)
+			self.realNameHint:SetVisible(true)
+		elseif (IsValid(self.realNameHint)) then
+			self.realNameHint:SetVisible(false)
+		end
+
+		local displayedDescription = self.description:GetText()
+		local realDescription = character:GetVar("description") or character:GetDescription() or ""
+
+		if (realDescription != "" and displayedDescription != realDescription and IsValid(self.realDescriptionHint)) then
+			self.realDescriptionHint:SetText(" (" .. CompactText(realDescription, 80) .. ")")
+			self.realDescriptionHint:SizeToContents()
+
+			surface.SetFont(self.description:GetFont())
+			local descriptionWidth = select(1, surface.GetTextSize(displayedDescription))
+			self.realDescriptionHint:SetPos(descriptionWidth + 4, 0)
+			self.realDescriptionHint:SetVisible(true)
+		elseif (IsValid(self.realDescriptionHint)) then
+			self.realDescriptionHint:SetVisible(false)
+		end
 	end
 end
 

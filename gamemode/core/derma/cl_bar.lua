@@ -108,6 +108,7 @@ function PANEL:Think()
 	local curTime = CurTime()
 	local bShouldHide = hook.Run("ShouldHideBars")
 	local bAlwaysShow = ix.option.Get("alwaysShowBars", false)
+	local bShowLabels = ix.option.Get("showBarLabels", false)
 
 	for _, v in ipairs(self.bars) do
 		local info = ix.bar.list[v:GetID()]
@@ -129,6 +130,11 @@ function PANEL:Think()
 
 		v:SetVisible(true)
 		v:SetValue(realValue)
+
+		if (!isstring(barText) and bShowLabels) then
+			barText = L(info.identifier)
+		end
+
 		v:SetText(isstring(barText) and barText or "")
 	end
 

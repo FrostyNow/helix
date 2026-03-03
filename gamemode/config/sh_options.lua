@@ -16,6 +16,10 @@ if (CLIENT) then
 		category = "appearance"
 	})
 
+	ix.option.Add("showBarLabels", ix.type.bool, false, {
+		category = "appearance"
+	})
+
 	ix.option.Add("minimalTooltips", ix.type.bool, false, {
 		category = "appearance"
 	})

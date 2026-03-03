@@ -1,6 +1,13 @@
 
 local PLUGIN = PLUGIN
 
+ix.option.Add("showAreas", ix.type.bool, false, {
+	category = "observer",
+	hidden = function()
+		return !LocalPlayer():IsAdmin()
+	end
+})
+
 local function DrawTextBackground(x, y, text, font, backgroundColor, padding)
 	font = font or "ixSubTitleFont"
 	padding = padding or 8
@@ -94,7 +101,10 @@ function PLUGIN:HUDPaint()
 end
 
 function PLUGIN:PostDrawTranslucentRenderables(bDepth, bSkybox)
-	if (bSkybox or !ix.area.bEditing) then
+	local client = LocalPlayer()
+	local bShowAreas = ix.option.Get("showAreas", false) and client:IsAdmin() and client:GetMoveType() == MOVETYPE_NOCLIP
+
+	if (bSkybox or (!ix.area.bEditing and !bShowAreas)) then
 		return
 	end
 

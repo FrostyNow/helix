@@ -11,6 +11,8 @@ LANGUAGE = {
 	areaRemoveTip = "지금 들어가 있는 구역을 삭제하려면 장전 버튼을 누르세요.",
 	areaDeleteConfirm = "정말 \"%s\" 구역을 삭제합니까?",
 	areaDelete = "구역 삭제",
+	optShowAreas = "구역 ESP 보기",
+	descShowAreas = "관전 상태일 때 모든 구역의 테두리를 표시합니다.",
 
 	cmdAreaEdit = "구역 수정 모드로 들어갑니다."
 }

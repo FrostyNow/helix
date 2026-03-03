@@ -805,10 +805,10 @@ function GM:PopulateImportantCharacterInfo(client, character, container)
 				end
 
 				local xOffset = (this.text and IsValid(this.text)) and (select(1, this.text:GetPos()) + 8) or 4
-				this.realNameHint:SetPos(xOffset + nameWidth, (this:GetTall() - hintHeight) / 2)
+				this.realNameHint:SetPos(xOffset + nameWidth, this:GetTall() - hintHeight - 4)
 				this.realNameHint:SetVisible(true)
 				this.realNameHint:SetTall(hintHeight)
-				this.realNameHint:SetContentAlignment(4)
+				this.realNameHint:SetContentAlignment(1)
 			end
 		elseif (IsValid(this.realNameHint)) then
 			this.realNameHint:Remove()

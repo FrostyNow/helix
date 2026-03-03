@@ -857,7 +857,11 @@ ix.command.Add("MapRestart", {
 	OnRun = function(self, client, delay, map)
 		delay = delay or 10
 		map = map or game.GetMap()
-		ix.util.NotifyLocalized("mapRestarting", nil, delay)
+		if (map == game.GetMap()) then
+			ix.util.NotifyLocalized("mapRestarting", nil, delay)
+		else
+			ix.util.NotifyLocalized("mapChanging", nil, delay, map)
+		end
 
 		timer.Simple(delay, function()
 			RunConsoleCommand("changelevel", map)

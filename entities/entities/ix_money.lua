@@ -44,6 +44,7 @@ if (SERVER) then
 
 		activator:PerformInteraction(ix.config.Get("itemPickupTime", 0.5), self, function(client)
 			if (hook.Run("OnPickupMoney", client, self) != false) then
+				activator:NotifyLocalized("moneyPickup", ix.currency.Get(self:GetAmount(), activator))
 				self:Remove()
 			end
 		end)

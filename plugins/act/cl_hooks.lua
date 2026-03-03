@@ -47,6 +47,11 @@ local traceMax = Vector(4, 4, 4)
 
 function PLUGIN:CalcView(client, origin)
 	local enterAngle = client:GetNetVar("actEnterAngle")
+
+	if (enterAngle and ix.plugin.Get("thirdperson") and ix.config.Get("thirdperson")) then
+		return
+	end
+
 	local fraction = self.cameraFraction
 	local offset = self.bIdle and forwardOffset or backwardOffset
 	local height = self.bIdle and idleHeightOffset or heightOffset

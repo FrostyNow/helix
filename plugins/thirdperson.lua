@@ -68,12 +68,12 @@ if (CLIENT) then
 			return false
 		end
 
-		if (ix.option.Get("thirdpersonEnabled", false) and
+		if ((ix.option.Get("thirdpersonEnabled", false) or self:GetNetVar("actEnterAngle")) and
 			!IsValid(self:GetVehicle()) and
+			self:GetMoveType() != MOVETYPE_NOCLIP and
 			isAllowed() and
 			IsValid(self) and
 			self:GetCharacter() and
-			!self:GetNetVar("actEnterAngle") and
 			!IsValid(entity) and
 			LocalPlayer():Alive()
 			) then
@@ -97,7 +97,7 @@ if (CLIENT) then
 				crouchFactor = Lerp(ft*5, crouchFactor, 0)
 			end
 
-			curAng = owner.camAng or angle_zero
+			curAng = client.camAng or angle_zero
 			view = {}
 			traceData = {}
 				traceData.start = 	client:GetPos() + client:GetViewOffset() +
@@ -120,13 +120,24 @@ if (CLIENT) then
 				traceData2.ignoreworld = bNoclip
 
 			local bClassic = ix.option.Get("thirdpersonClassic", false)
+			local hitPos = util.TraceLine(traceData2).HitPos
+			local shootPos = client:GetShootPos()
+			local targetAngle
 
-			if (bClassic or owner:IsWepRaised() or
-				(owner:KeyDown(bit.bor(IN_FORWARD, IN_BACK, IN_MOVELEFT, IN_MOVERIGHT)) and owner:GetVelocity():Length() >= 10)) then
-				client:SetEyeAngles((util.TraceLine(traceData2).HitPos - client:GetShootPos()):Angle())
+			-- if the trace hits something too close, we'll just aim forward from the camera
+			-- to prevent the character from snapping/twisting wildly
+			if (hitPos:DistToSqr(shootPos) < 10000) then -- 100 * 100
+				targetAngle = curAng
+			else
+				targetAngle = (hitPos - shootPos):Angle()
+			end
+
+			if (bClassic or client:IsWepRaised() or
+				(client:KeyDown(bit.bor(IN_FORWARD, IN_BACK, IN_MOVELEFT, IN_MOVERIGHT)) and client:GetVelocity():Length() >= 10)) then
+				client:SetEyeAngles(targetAngle)
 			else
 				local currentAngles = client:EyeAngles()
-				currentAngles.pitch = (util.TraceLine(traceData2).HitPos - client:GetShootPos()):Angle().pitch
+				currentAngles.pitch = targetAngle.pitch
 
 				client:SetEyeAngles(currentAngles)
 			end

@@ -165,7 +165,9 @@ function ITEM:OnRemoved()
 end
 
 function ITEM:OnEquipped()
+	hook.Run("OnItemEquipped", self, self:GetOwner())
 end
 
 function ITEM:OnUnequipped()
+	hook.Run("OnItemUnequipped", self, self:GetOwner())
 end

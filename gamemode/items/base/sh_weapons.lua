@@ -184,6 +184,8 @@ function ITEM:Equip(client, bNoSelect, bNoSound)
 		if (self.OnEquipWeapon) then
 			self:OnEquipWeapon(client, weapon)
 		end
+
+		self:OnEquipped()
 	else
 		print(Format("[Helix] Cannot equip weapon - %s does not exist!", self.class))
 	end
@@ -219,6 +221,8 @@ function ITEM:Unequip(client, bPlaySound, bRemoveItem)
 		self:OnUnequipWeapon(client, weapon)
 	end
 
+	self:OnUnequipped()
+
 	if (bRemoveItem) then
 		self:Remove()
 	end
@@ -240,7 +244,12 @@ end
 
 function ITEM:OnLoadout()
 	if (self:GetData("equip")) then
-		local client = self.player
+		local client = self.player or self:GetOwner()
+
+		if (!IsValid(client)) then
+			return
+		end
+
 		client.carryWeapons = client.carryWeapons or {}
 
 		local weapon = client:Give(self.class, true)
@@ -314,3 +323,11 @@ hook.Add("EntityRemoved", "ixRemoveGrenade", function(entity)
 		end
 	end
 end)
+
+function ITEM:OnEquipped()
+	hook.Run("OnItemEquipped", self, self:GetOwner())
+end
+
+function ITEM:OnUnequipped()
+	hook.Run("OnItemUnequipped", self, self:GetOwner())
+end

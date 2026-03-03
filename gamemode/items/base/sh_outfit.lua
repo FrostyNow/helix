@@ -7,6 +7,24 @@ ITEM.width = 1
 ITEM.height = 1
 ITEM.outfitCategory = "model"
 ITEM.pacData = {}
+ITEM.equipSound = {
+	"interface/items/inv_items_cloth_1.ogg",
+	"interface/items/inv_items_cloth_2.ogg",
+	"interface/items/inv_items_cloth_3.ogg"
+}
+ITEM.unequipSound = {
+	"interface/items/inv_items_cloth_1.ogg",
+	"interface/items/inv_items_cloth_2.ogg",
+	"interface/items/inv_items_cloth_3.ogg"
+}
+
+local function PlayRandomSound(client, sound)
+	if (istable(sound)) then
+		client:EmitSound(sound[math.random(1, #sound)])
+	elseif (isstring(sound)) then
+		client:EmitSound(sound)
+	end
+end
 
 --[[
 -- This will change a player's skin after changing the model. Keep in mind it starts at 0.
@@ -39,7 +57,11 @@ if (CLIENT) then
 end
 
 function ITEM:AddOutfit(client)
+	client = client or self.player or self:GetOwner()
+	if (!IsValid(client)) then return end
+
 	local character = client:GetCharacter()
+	if (!character) then return end
 
 	self:SetData("equip", true)
 
@@ -47,10 +69,14 @@ function ITEM:AddOutfit(client)
 
 	-- remove original bodygroups
 	if (!table.IsEmpty(groups)) then
-		character:SetData("oldGroups" .. self.outfitCategory, groups)
-		character:SetData("groups", {})
+		local oldGroups = {}
+		for i = 0, client:GetNumBodyGroups() - 1 do
+			local name = client:GetBodygroupName(i)
+			oldGroups[name] = client:GetBodygroup(i)
+		end
 
-		client:ResetBodygroups()
+		character:SetData("oldGroups" .. self.outfitCategory, oldGroups)
+		character:SetData("groups", {})
 	end
 
 	if (isfunction(self.OnGetReplacement)) then
@@ -92,8 +118,8 @@ function ITEM:AddOutfit(client)
 			end
 		end
 	-- apply default item bodygroups if none are saved
-	elseif (istable(self.bodyGroups)) then
-		for k, v in pairs(self.bodyGroups) do
+	elseif (istable(self.eqBodyGroups)) then
+		for k, v in pairs(self.eqBodyGroups) do
 			local index = client:FindBodygroupByName(k)
 
 			if (index > -1) then
@@ -168,9 +194,6 @@ function ITEM:RemoveOutfit(client)
 		self:SetData("groups", groups)
 	end
 
-	-- remove outfit bodygroups
-	client:ResetBodygroups()
-
 	-- restore the original player model
 	if (character:GetData("oldModel" .. self.outfitCategory)) then
 		character:SetModel(character:GetData("oldModel" .. self.outfitCategory))
@@ -187,13 +210,13 @@ function ITEM:RemoveOutfit(client)
 		end
 	end
 
-	-- get character original bodygroups
+	-- restore character original bodygroups
 	groups = character:GetData("oldGroups" .. self.outfitCategory, {})
 
 	-- restore original bodygroups
 	if (!table.IsEmpty(groups)) then
 		for k, v in pairs(groups) do
-			local index = tonumber(k) or client:FindBodygroupByName(k)
+			local index = isnumber(k) and k or client:FindBodygroupByName(k)
 
 			if (index and index > -1) then
 				client:SetBodygroup(index, tonumber(v) or 0)
@@ -202,6 +225,23 @@ function ITEM:RemoveOutfit(client)
 
 		character:SetData("groups", character:GetData("oldGroups" .. self.outfitCategory, {}))
 		character:SetData("oldGroups" .. self.outfitCategory, nil)
+	end
+
+	-- Re-apply bodygroups from other equipped items to handle intersections
+	for _, item in pairs(character:GetInventory():GetItems()) do
+		if (item.id != self.id and item:GetData("equip") and (item.eqBodyGroups or item.bodyGroups)) then
+			local bgs = item.eqBodyGroups or item.bodyGroups
+			for bgName, bgValue in pairs(bgs) do
+				local index = client:FindBodygroupByName(bgName)
+				if (index > -1) then
+					client:SetBodygroup(index, bgValue)
+					
+					local currentGroups = character:GetData("groups", {})
+					currentGroups[index] = bgValue
+					character:SetData("groups", currentGroups)
+				end
+			end
+		end
 	end
 
 	if (istable(self.attribBoosts)) then
@@ -244,6 +284,10 @@ ITEM:Hook("drop", function(item)
 		local character = ix.char.loaded[item.owner]
 		local client = character and character:GetPlayer() or item:GetOwner()
 
+		if (IsValid(client)) then
+			PlayRandomSound(client, item.unequipSound)
+		end
+
 		item.player = client
 		item:RemoveOutfit(item:GetOwner())
 	end
@@ -254,7 +298,9 @@ ITEM.functions.EquipUn = { -- sorry, for name order.
 	tip = "unequipTip",
 	icon = "icon16/cross.png",
 	OnRun = function(item)
-		item:RemoveOutfit(item.player)
+		local client = item.player
+		PlayRandomSound(client, item.unequipSound)
+		item:RemoveOutfit(client)
 		return false
 	end,
 	OnCanRun = function(item)
@@ -284,7 +330,8 @@ ITEM.functions.Equip = {
 			end
 		end
 
-		item:AddOutfit(item.player)
+		PlayRandomSound(client, item.equipSound)
+		item:AddOutfit(client)
 		return false
 	end,
 	OnCanRun = function(item)
@@ -312,9 +359,17 @@ function ITEM:OnRemoved()
 end
 
 function ITEM:OnEquipped()
+	hook.Run("OnItemEquipped", self, self:GetOwner())
 end
 
 function ITEM:OnUnequipped()
+	hook.Run("OnItemUnequipped", self, self:GetOwner())
+end
+
+function ITEM:OnLoadout()
+	if (self:GetData("equip")) then
+		self:AddOutfit(self.player or self:GetOwner())
+	end
 end
 
 function ITEM:CanEquipOutfit()

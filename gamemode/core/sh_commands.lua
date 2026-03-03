@@ -847,15 +847,20 @@ ix.command.Add("CharSetClass", {
 })
 
 ix.command.Add("MapRestart", {
+	alias = {"ChangeLevel"},
 	description = "@cmdMapRestart",
 	adminOnly = true,
-	arguments = bit.bor(ix.type.number, ix.type.optional),
-	OnRun = function(self, client, delay)
+	arguments = {
+		bit.bor(ix.type.number, ix.type.optional),
+		bit.bor(ix.type.string, ix.type.optional)
+	},
+	OnRun = function(self, client, delay, map)
 		delay = delay or 10
+		map = map or game.GetMap()
 		ix.util.NotifyLocalized("mapRestarting", nil, delay)
 
 		timer.Simple(delay, function()
-			RunConsoleCommand("changelevel", game.GetMap())
+			RunConsoleCommand("changelevel", map)
 		end)
 	end
 })

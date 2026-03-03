@@ -64,13 +64,23 @@ if (SERVER) then
 
 			local material = itemTable:GetMaterial(self)
 
-			self:SetSkin(itemTable:GetSkin())
 			if (itemTable.worldModel) then
 				self:SetModel(itemTable.worldModel == true and "models/props_junk/cardboard_box004a.mdl" or itemTable.worldModel)
 			else
 				self:SetModel(model)
 			end
-			self:SetModel(model)
+
+			self:SetSkin(itemTable:GetSkin())
+
+			if (istable(itemTable.bodyGroups)) then
+				for k, v in pairs(itemTable.bodyGroups) do
+					local index = self:FindBodygroupByName(k)
+
+					if (index > -1) then
+						self:SetBodygroup(index, v)
+					end
+				end
+			end
 
 			if (material) then
 				self:SetMaterial(material)

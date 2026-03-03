@@ -9,7 +9,7 @@ local function RenderNewIcon(panel, itemTable)
 	local model = itemTable:GetModel()
 
 	-- re-render icons
-	if ((itemTable.iconCam and !ICON_RENDER_QUEUE[string.lower(model)]) or itemTable.forceRender) then
+	if ((itemTable.iconCam and !ICON_RENDER_QUEUE[string.lower(model)]) or itemTable.forceRender or itemTable.bodyGroups) then
 		local iconCam = itemTable.iconCam
 		iconCam = {
 			cam_pos = iconCam.pos,
@@ -21,6 +21,21 @@ local function RenderNewIcon(panel, itemTable)
 		panel.Icon:RebuildSpawnIconEx(
 			iconCam
 		)
+
+		if (istable(itemTable.bodyGroups)) then
+			local modelPanel = IsValid(panel.Icon) and panel.Icon or panel:GetChild(0)
+			local entity = IsValid(modelPanel) and modelPanel.GetEntity and modelPanel:GetEntity()
+
+			if (IsValid(entity)) then
+				for k, v in pairs(itemTable.bodyGroups) do
+					local index = entity:FindBodygroupByName(k)
+
+					if (index > -1) then
+						entity:SetBodygroup(index, v)
+					end
+				end
+			end
+		end
 	end
 end
 
@@ -638,23 +653,38 @@ function PANEL:AddIcon(model, x, y, w, h, skin)
 
 	if (self.slots[x] and self.slots[x][y]) then
 		local panel = self:Add("ixItemIcon")
-		panel:SetSize(w * iconSize, h * iconSize)
-		panel:SetZPos(999)
-		panel:InvalidateLayout(true)
-		panel:SetModel(model, skin)
-		panel:SetPos(self.slots[x][y]:GetPos())
-		panel.gridX = x
-		panel.gridY = y
-		panel.gridW = w
-		panel.gridH = h
-
 		local inventory = ix.item.inventories[self.invID]
 
 		if (!inventory) then
 			return
 		end
 
-		local itemTable = inventory:GetItemAt(panel.gridX, panel.gridY)
+		local itemTable = inventory:GetItemAt(x, y)
+
+		panel:SetSize(w * iconSize, h * iconSize)
+		panel:SetZPos(999)
+		panel:InvalidateLayout(true)
+		panel:SetModel(model, skin)
+
+		if (itemTable and istable(itemTable.bodyGroups)) then
+			local modelPanel = IsValid(panel.Icon) and panel.Icon or panel:GetChild(0)
+			local entity = IsValid(modelPanel) and modelPanel.GetEntity and modelPanel:GetEntity()
+
+			if (IsValid(entity)) then
+				for k, v in pairs(itemTable.bodyGroups) do
+					local index = entity:FindBodygroupByName(k)
+
+					if (index > -1) then
+						entity:SetBodygroup(index, v)
+					end
+				end
+			end
+		end
+		panel:SetPos(self.slots[x][y]:GetPos())
+		panel.gridX = x
+		panel.gridY = y
+		panel.gridW = w
+		panel.gridH = h
 
 		panel:SetInventoryID(inventory:GetID())
 		panel:SetItemTable(itemTable)
@@ -677,7 +707,9 @@ function PANEL:AddIcon(model, x, y, w, h, skin)
 						itemTable.width,
 						itemTable.height,
 						itemTable:GetModel(),
-						itemTable.iconCam
+						itemTable.iconCam,
+						nil,
+						itemTable.bodyGroups
 					)
 				end
 			end

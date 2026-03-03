@@ -104,7 +104,18 @@ function PANEL:Paint(width, height)
 	end
 
 	surface.SetMaterial(self.material)
-	surface.SetDrawColor(self.bHidden and color_black or color_white)
+
+	if (self.bHidden) then
+		local bIsAdmin = LocalPlayer():IsAdmin()
+		if (bIsAdmin) then
+			surface.SetDrawColor(128, 128, 128, 255)
+		else
+			surface.SetDrawColor(0, 0, 0, 255)
+		end
+	else
+		surface.SetDrawColor(255, 255, 255, 255)
+	end
+
 	surface.DrawTexturedRect(0, 0, width, height)
 end
 
@@ -169,6 +180,12 @@ function PANEL:Init()
 
 	self.paintFunction = rowPaintFunctions[1]
 	self.nextThink = CurTime() + 1
+
+	self.realNameHint = self.name:Add("DLabel")
+	self.realNameHint:SetFont("ixAdminAnonHintFont")
+	self.realNameHint:SetTextColor(Color(170, 170, 170))
+	self.realNameHint:SetMouseInputEnabled(false)
+	self.realNameHint:SetVisible(false)
 end
 
 function PANEL:Update()
@@ -209,6 +226,26 @@ function PANEL:Update()
 	if (self.description:GetText() != description) then
 		self.description:SetText(description)
 		self.description:SizeToContents()
+	end
+
+	-- Real name hint for admins
+	local bIsAdmin = LocalPlayer():IsAdmin()
+	if (bIsAdmin and IsValid(character) and name != character:GetName()) then
+		local realName = character:GetName()
+		self.realNameHint:SetText(" (" .. realName .. ")")
+		self.realNameHint:SizeToContents()
+
+		surface.SetFont(self.name:GetFont())
+		local nameWidth = select(1, surface.GetTextSize(name))
+		
+		local x, y = self.name:GetPos()
+		self.realNameHint:SetParent(self) 
+		self.realNameHint:SetPos(x + nameWidth + 4, y)
+		self.realNameHint:SetTall(self.name:GetTall())
+		self.realNameHint:SetContentAlignment(4)
+		self.realNameHint:SetVisible(true)
+	else
+		self.realNameHint:SetVisible(false)
 	end
 end
 

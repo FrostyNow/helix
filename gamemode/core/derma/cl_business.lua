@@ -37,6 +37,36 @@ function PANEL:SetItem(itemTable)
 	self.icon:DockMargin(5, 5, 5, 10)
 	self.icon:InvalidateLayout(true)
 	self.icon:SetModel(itemTable:GetModel(), itemTable:GetSkin())
+
+	if ((itemTable.iconCam and !ICON_RENDER_QUEUE[itemTable.uniqueID]) or itemTable.forceRender) then
+		local iconCam = itemTable.iconCam
+		iconCam = {
+			cam_pos = iconCam.pos,
+			cam_fov = iconCam.fov,
+			cam_ang = iconCam.ang,
+		}
+		ICON_RENDER_QUEUE[itemTable.uniqueID] = true
+
+		self.icon:RebuildSpawnIconEx(
+			iconCam
+		)
+	end
+
+	if (istable(itemTable.bodyGroups)) then
+		local modelPanel = IsValid(self.icon.Icon) and self.icon.Icon or self.icon:GetChild(0)
+		local entity = IsValid(modelPanel) and modelPanel.GetEntity and modelPanel:GetEntity()
+
+		if (IsValid(entity)) then
+			for k, v in pairs(itemTable.bodyGroups) do
+				local index = entity:FindBodygroupByName(k)
+
+				if (index > -1) then
+					entity:SetBodygroup(index, v)
+				end
+			end
+		end
+	end
+
 	self.icon:SetHelixTooltip(function(tooltip)
 		ix.hud.PopulateItemTooltip(tooltip, itemTable)
 	end)
@@ -59,20 +89,6 @@ function PANEL:SetItem(itemTable)
 
 			itemTable.PaintOver(this, itemTable, w, h)
 		end
-	end
-
-	if ((itemTable.iconCam and !ICON_RENDER_QUEUE[itemTable.uniqueID]) or itemTable.forceRender) then
-		local iconCam = itemTable.iconCam
-		iconCam = {
-			cam_pos = iconCam.pos,
-			cam_fov = iconCam.fov,
-			cam_ang = iconCam.ang,
-		}
-		ICON_RENDER_QUEUE[itemTable.uniqueID] = true
-
-		self.icon:RebuildSpawnIconEx(
-			iconCam
-		)
 	end
 end
 

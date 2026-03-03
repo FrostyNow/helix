@@ -247,7 +247,7 @@ end
 	Renders the Icon with given arguments.
 	returns nothing
 ]]--
-function ikon:renderIcon(name, w, h, mdl, camInfo, updateCache)
+function ikon:renderIcon(name, w, h, mdl, camInfo, updateCache, bodygroups)
 	if (#ikon.requestList > 0) then return IKON_BUSY end
 	if (ikon.requestList[name]) then return IKON_PROCESSING end
 	if (!w or !h or !mdl) then return IKON_SOMETHINGWRONG end
@@ -272,6 +272,16 @@ function ikon:renderIcon(name, w, h, mdl, camInfo, updateCache)
 	end
 
 	ikon.renderEntity:SetModel(ikon.renderModel)
+	
+	if (istable(bodygroups)) then
+		for k, v in pairs(bodygroups) do
+			local index = ikon.renderEntity:FindBodygroupByName(k)
+
+			if (index > -1) then
+				ikon.renderEntity:SetBodygroup(index, v)
+			end
+		end
+	end
 
 	local bone = ikon.renderEntity:LookupBone("ValveBiped.Bip01_Head1")
 

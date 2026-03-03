@@ -16,13 +16,23 @@ function PANEL:Init()
 	end
 end
 
-function PANEL:SetModel(model, skin, hidden)
+function PANEL:SetModel(model, skin, hidden, bodygroups)
 	BaseClass.SetModel(self, model)
 
 	local entity = self.Entity
 
 	if (skin) then
 		entity:SetSkin(skin)
+	end
+
+	if (istable(bodygroups)) then
+		for k, v in pairs(bodygroups) do
+			local index = entity:FindBodygroupByName(k)
+
+			if (index > -1) then
+				entity:SetBodygroup(index, v)
+			end
+		end
 	end
 
 	local sequence = entity:SelectWeightedSequence(ACT_IDLE)

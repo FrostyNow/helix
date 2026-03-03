@@ -225,6 +225,22 @@ function GM:LoadFonts(font, genericFont)
 		weight = 500
 	})
 
+	surface.CreateFont("ixAdminAnonHintFont", {
+		font = font,
+		size = 14,
+		weight = 500,
+		italic = true,
+		extended = true
+	})
+
+	surface.CreateFont("ixAdminAnonHintFontLarge", {
+		font = font,
+		size = 18,
+		weight = 500,
+		italic = true,
+		extended = true
+	})
+
 	surface.CreateFont("ixItemDescFont", {
 		font = font,
 		size = math.max(ScreenScale(6), 17),
@@ -713,6 +729,10 @@ local injTextTable = {
 }
 
 function GM:GetInjuredText(client)
+	if (!IsValid(client)) then
+		return
+	end
+
 	local health = client:Health()
 	local fraction = health / client:GetMaxHealth()
 
@@ -738,13 +758,60 @@ function GM:PopulateImportantCharacterInfo(client, character, container)
 	name:SetBackgroundColor(color)
 
 	name.Think = function(this)
+		if (!IsValid(client)) then
+			return
+		end
+
 		local currentName = hookRun("GetCharacterName", client) or character:GetName()
+		local realName = character:GetName()
 
 		if (this:GetText() != currentName) then
 			this:SetText(currentName)
 			this:SizeToContents()
-
 			container:SizeToContents()
+		end
+
+		-- Admin real name hint
+		local bIsAdmin = LocalPlayer():IsAdmin()
+		if (bIsAdmin and currentName != realName) then
+			if (!IsValid(this.realNameHint)) then
+				this.realNameHint = this:Add("DLabel")
+				this.realNameHint:SetFont("ixAdminAnonHintFontLarge")
+				this.realNameHint:SetTextColor(Color(170, 170, 170))
+				this.realNameHint:SetMouseInputEnabled(false)
+				this.realNameHint:SetZPos(1001)
+				this.realNameHint:SetText(" (" .. realName .. ")")
+				this.realNameHint:SizeToContents()
+
+				-- Ensure row can fit the hint
+				this:SetMaxWidth(ScrW() * 0.8)
+				this:SetWrap(false)
+			end
+
+			if (IsValid(this.realNameHint)) then
+				local font = this:GetFont() or "ixSmallTitleFont"
+				surface.SetFont(font)
+				local nameWidth, nameHeight = surface.GetTextSize(currentName)
+
+				surface.SetFont("ixAdminAnonHintFontLarge")
+				local hintWidth, hintHeight = surface.GetTextSize(this.realNameHint:GetText())
+
+				local totalWidth = nameWidth + hintWidth + 20
+				local totalHeight = math.max(nameHeight, hintHeight) + 4
+
+				if (this:GetWide() != totalWidth or this:GetTall() != totalHeight) then
+					this:SetSize(totalWidth, totalHeight)
+					container:SizeToContents()
+				end
+
+				local xOffset = (this.text and IsValid(this.text)) and (select(1, this.text:GetPos()) + 8) or 4
+				this.realNameHint:SetPos(xOffset + nameWidth, (this:GetTall() - hintHeight) / 2)
+				this.realNameHint:SetVisible(true)
+				this.realNameHint:SetTall(hintHeight)
+				this.realNameHint:SetContentAlignment(4)
+			end
+		elseif (IsValid(this.realNameHint)) then
+			this.realNameHint:Remove()
 		end
 	end
 
@@ -756,6 +823,10 @@ function GM:PopulateImportantCharacterInfo(client, character, container)
 	injure:SetTall(0)
 
 	injure.Think = function(this)
+		if (!IsValid(client)) then
+			return
+		end
+
 		local injureText, injureTextColor = hookRun("GetInjuredText", client)
 
 		if (injureText) then
@@ -786,6 +857,10 @@ function GM:PopulateCharacterInfo(client, character, container)
 	description:SetTall(0)
 
 	description.Think = function(this)
+		if (!IsValid(client)) then
+			return
+		end
+
 		local descriptionText = character:GetDescription()
 		descriptionText = (descriptionText:utf8len() > 128 and
 			string.format("%s...", descriptionText:utf8sub(1, 125)) or

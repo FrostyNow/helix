@@ -366,7 +366,12 @@ function PANEL:Think()
 		end
 
 		self:MoveToFront() -- dragging a panel w/ tooltip will push the tooltip beneath even the menu panel(???)
-	elseif (IsValid(self.entity) and !self.bClosing) then
+	elseif (!self.bClosing) then
+		if (!IsValid(self.entity)) then
+			self:Remove()
+			return
+		end
+
 		if (self.bRaised) then
 			self:SetPos(
 				ScrW() * 0.5 - self:GetWide() * 0.5,
@@ -511,6 +516,9 @@ function PANEL:Paint(width, height)
 end
 
 function PANEL:Think()
+	if (self.bEntity and !self.bClosing and !IsValid(self.entity)) then
+		self:Remove()
+	end
 end
 
 function PANEL:SizeToContents()

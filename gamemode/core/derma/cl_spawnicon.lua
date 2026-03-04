@@ -25,6 +25,10 @@ function PANEL:SetModel(model, skin, hidden, bodygroups)
 		entity:SetSkin(skin)
 	end
 
+	for i = 0, entity:GetNumBodyGroups() - 1 do
+		entity:SetBodygroup(i, 0)
+	end
+	
 	if (istable(bodygroups)) then
 		for k, v in pairs(bodygroups) do
 			local index = entity:FindBodygroupByName(k)

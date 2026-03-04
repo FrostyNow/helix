@@ -273,6 +273,10 @@ function ikon:renderIcon(name, w, h, mdl, camInfo, updateCache, bodygroups)
 
 	ikon.renderEntity:SetModel(ikon.renderModel)
 	
+	for i = 0, ikon.renderEntity:GetNumBodyGroups() - 1 do
+		ikon.renderEntity:SetBodygroup(i, 0)
+	end
+	
 	if (istable(bodygroups)) then
 		for k, v in pairs(bodygroups) do
 			local index = ikon.renderEntity:FindBodygroupByName(k)

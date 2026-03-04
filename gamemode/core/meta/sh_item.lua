@@ -334,6 +334,16 @@ function ITEM:SetData(key, value, receivers, noSave, noCheckEntity)
 				data[key] = value
 
 				ent:SetNetVar("data", data)
+
+				if (key == "bodygroups" and istable(value)) then
+					for k, v in pairs(value) do
+						local index = ent:FindBodygroupByName(k)
+
+						if (index > -1) then
+							ent:SetBodygroup(index, v)
+						end
+					end
+				end
 			end
 		end
 	end

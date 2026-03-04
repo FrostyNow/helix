@@ -5,35 +5,76 @@ local RECEIVER_NAME = "ixInventoryItem"
 ICON_RENDER_QUEUE = ICON_RENDER_QUEUE or {}
 
 -- To make making inventory variant, This must be followed up.
-local function RenderNewIcon(panel, itemTable)
+function ix.gui.RenderNewIcon(panel, itemTable)
 	local model = itemTable:GetModel()
+	local bodygroups = itemTable:GetData("bodygroups", itemTable.bodyGroups)
+	local queueKey = string.lower(model)
+
+	if (istable(bodygroups)) then
+		queueKey = queueKey .. util.CRC(util.TableToJSON(bodygroups))
+	end
+
+	panel.ixRenderKey = itemTable.uniqueID .. (istable(bodygroups) and util.CRC(util.TableToJSON(bodygroups)) or "")
 
 	-- re-render icons
-	if ((itemTable.iconCam and !ICON_RENDER_QUEUE[string.lower(model)]) or itemTable.forceRender or itemTable.bodyGroups) then
-		local iconCam = itemTable.iconCam
-		iconCam = {
-			cam_pos = iconCam.pos,
-			cam_ang = iconCam.ang,
-			cam_fov = iconCam.fov,
-		}
-		ICON_RENDER_QUEUE[string.lower(model)] = true
-
-		panel.Icon:RebuildSpawnIconEx(
-			iconCam
-		)
-
-		if (istable(itemTable.bodyGroups)) then
+	if (!ICON_RENDER_QUEUE[queueKey] or itemTable.forceRender) then
+		if (istable(bodygroups)) then
 			local modelPanel = IsValid(panel.Icon) and panel.Icon or panel:GetChild(0)
 			local entity = IsValid(modelPanel) and modelPanel.GetEntity and modelPanel:GetEntity()
 
 			if (IsValid(entity)) then
-				for k, v in pairs(itemTable.bodyGroups) do
+				for i = 0, entity:GetNumBodyGroups() - 1 do
+					entity:SetBodygroup(i, 0)
+				end
+				
+				for k, v in pairs(bodygroups) do
 					local index = entity:FindBodygroupByName(k)
 
 					if (index > -1) then
 						entity:SetBodygroup(index, v)
 					end
 				end
+			end
+		end
+
+		local iconCam = itemTable.iconCam
+
+		if (iconCam) then
+			iconCam = {
+				cam_pos = iconCam.pos,
+				cam_ang = iconCam.ang,
+				cam_fov = iconCam.fov,
+			}
+
+			ICON_RENDER_QUEUE[queueKey] = true
+
+			panel.Icon:RebuildSpawnIconEx(
+				iconCam
+			)
+		else
+			ICON_RENDER_QUEUE[queueKey] = true
+		end
+	end
+end
+
+function ix.gui.RefreshItemIcon(itemID)
+	local itemTable = ix.item.instances[itemID]
+	if (!itemTable) then return end
+
+	-- Check known top-level inventory panels first
+	for i = 1, 100 do
+		local panel = ix.gui["inv"..i]
+		if (IsValid(panel) and panel.panels and panel.panels[itemID]) then
+			ix.gui.RenderNewIcon(panel.panels[itemID], itemTable)
+		end
+	end
+
+	-- Also check any other panels that might be inventory containers
+	for _, v in pairs(vgui.GetWorldPanel():GetChildren()) do
+		if (v:GetName() == "ixInventory" and v.panels) then
+			local icon = v.panels[itemID]
+			if (IsValid(icon)) then
+				ix.gui.RenderNewIcon(icon, itemTable)
 			end
 		end
 	end
@@ -666,16 +707,23 @@ function PANEL:AddIcon(model, x, y, w, h, skin)
 		panel:InvalidateLayout(true)
 		panel:SetModel(model, skin)
 
-		if (itemTable and istable(itemTable.bodyGroups)) then
-			local modelPanel = IsValid(panel.Icon) and panel.Icon or panel:GetChild(0)
-			local entity = IsValid(modelPanel) and modelPanel.GetEntity and modelPanel:GetEntity()
+		if (itemTable) then
+			local bodygroups = itemTable:GetData("bodygroups", itemTable.bodyGroups)
+			if (istable(bodygroups)) then
+				local modelPanel = IsValid(panel.Icon) and panel.Icon or panel:GetChild(0)
+				local entity = IsValid(modelPanel) and modelPanel.GetEntity and modelPanel:GetEntity()
 
-			if (IsValid(entity)) then
-				for k, v in pairs(itemTable.bodyGroups) do
-					local index = entity:FindBodygroupByName(k)
+				if (IsValid(entity)) then
+					for i = 0, entity:GetNumBodyGroups() - 1 do
+						entity:SetBodygroup(i, 0)
+					end
 
-					if (index > -1) then
-						entity:SetBodygroup(index, v)
+					for k, v in pairs(bodygroups) do
+						local index = entity:FindBodygroupByName(k)
+
+						if (index > -1) then
+							entity:SetBodygroup(index, v)
+						end
 					end
 				end
 			end
@@ -696,26 +744,29 @@ function PANEL:AddIcon(model, x, y, w, h, skin)
 		if (itemTable.exRender) then
 			panel.Icon:SetVisible(false)
 			panel.ExtraPaint = function(this, panelX, panelY)
-				local exIcon = ikon:GetIcon(itemTable.uniqueID)
+				local bg = itemTable:GetData("bodygroups", itemTable.bodyGroups)
+				local renderKey = itemTable.uniqueID .. (istable(bg) and util.CRC(util.TableToJSON(bg)) or "")
+
+				local exIcon = ikon:GetIcon(renderKey)
 				if (exIcon) then
 					surface.SetMaterial(exIcon)
 					surface.SetDrawColor(color_white)
 					surface.DrawTexturedRect(0, 0, panelX, panelY)
 				else
 					ikon:renderIcon(
-						itemTable.uniqueID,
+						renderKey,
 						itemTable.width,
 						itemTable.height,
 						itemTable:GetModel(),
 						itemTable.iconCam,
 						nil,
-						itemTable.bodyGroups
+						bg
 					)
 				end
 			end
 		else
 			-- yeah..
-			RenderNewIcon(panel, itemTable)
+			ix.gui.RenderNewIcon(panel, itemTable)
 		end
 
 		panel.slots = {}

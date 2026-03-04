@@ -60,6 +60,7 @@ if (SERVER) then
 		local itemTable = ix.item.instances[itemID]
 
 		if (itemTable) then
+			itemTable.entity = self
 			local model = itemTable.OnGetDropModel and itemTable:OnGetDropModel(self) or itemTable:GetModel(self)
 
 			local material = itemTable:GetMaterial(self)
@@ -72,8 +73,9 @@ if (SERVER) then
 
 			self:SetSkin(itemTable:GetSkin())
 
-			if (istable(itemTable.bodyGroups)) then
-				for k, v in pairs(itemTable.bodyGroups) do
+			local bodygroups = itemTable:GetData("bodygroups", itemTable.bodyGroups)
+			if (istable(bodygroups)) then
+				for k, v in pairs(bodygroups) do
 					local index = self:FindBodygroupByName(k)
 
 					if (index > -1) then
@@ -178,6 +180,7 @@ if (SERVER) then
 
 		if (!itemTable) then
 			self:Remove()
+			return
 		end
 
 		if (itemTable.Think) then

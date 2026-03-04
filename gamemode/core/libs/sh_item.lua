@@ -297,6 +297,10 @@ function ix.item.New(uniqueID, id)
 
 		ix.item.instances[id] = item
 
+		if (item.OnInstantiated) then
+			item:OnInstantiated()
+		end
+
 		return item
 	else
 		ErrorNoHalt("[Helix] Attempt to index unknown item '"..uniqueID.."'\n")
@@ -362,6 +366,10 @@ do
 
 				item.invID = item.invID or id
 				inventory.slots[x][y] = item
+
+				if (item.OnInstantiated) then
+					item:OnInstantiated()
+				end
 			end
 
 			if (character) then
@@ -387,9 +395,14 @@ do
 			if (item) then
 				local key = net.ReadString()
 				local value = net.ReadType()
+				local oldValue = item.data[key]
 
 				item.data = item.data or {}
 				item.data[key] = value
+
+				if (item.OnDataChanged) then
+					item:OnDataChanged(key, oldValue, value)
+				end
 
 				local invID = item.invID == LocalPlayer():GetCharacter():GetInventory():GetID() and 1 or item.invID
 				local panel = ix.gui["inv" .. invID]
@@ -426,6 +439,10 @@ do
 
 					if (data) then
 						item.data = data
+					end
+
+					if (item.OnInstantiated) then
+						item:OnInstantiated()
 					end
 
 					inventory.slots[x] = inventory.slots[x] or {}

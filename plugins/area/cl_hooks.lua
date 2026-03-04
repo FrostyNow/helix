@@ -102,7 +102,7 @@ end
 
 function PLUGIN:PostDrawTranslucentRenderables(bDepth, bSkybox)
 	local client = LocalPlayer()
-	local bShowAreas = ix.option.Get("showAreas", false) and client:IsAdmin() and client:GetMoveType() == MOVETYPE_NOCLIP
+	local bShowAreas = ix.option.Get("observerESP", true) and ix.option.Get("showAreas", false) and client:IsAdmin() and client:GetMoveType() == MOVETYPE_NOCLIP
 
 	if (bSkybox or (!ix.area.bEditing and !bShowAreas)) then
 		return

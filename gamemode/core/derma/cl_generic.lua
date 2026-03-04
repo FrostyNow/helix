@@ -29,15 +29,18 @@ end
 
 vgui.Register("ixTextEntry", PANEL, "DTextEntry")
 
+ix.gui = ix.gui or {}
+ix.gui.categoryCollapsed = ix.gui.categoryCollapsed or {}
+
 -- similar to a frame, but is mainly used for grouping panels together in a list
 PANEL = {}
 
-AccessorFunc(PANEL, "text", "Text", FORCE_STRING)
 AccessorFunc(PANEL, "color", "Color")
 
 function PANEL:Init()
 	self.text = ""
 	self.paddingTop = 32
+	self.bCollapsed = true
 
 	local skin = self:GetSkin()
 
@@ -47,13 +50,47 @@ function PANEL:Init()
 	end
 
 	self:DockPadding(1, self.paddingTop, 1, 1)
+
+	self.categoryButton = self:Add("DButton")
+	self.categoryButton:SetText("")
+	self.categoryButton.Paint = function() end
+	self.categoryButton.DoClick = function(this)
+		self.bCollapsed = !self.bCollapsed
+		ix.gui.categoryCollapsed[self.text] = self.bCollapsed
+
+		if (self.OnToggled) then
+			self:OnToggled(self.bCollapsed)
+		end
+	end
+end
+
+function PANEL:SetText(text)
+	self.text = tostring(text)
+
+	if (ix.gui.categoryCollapsed[self.text] != nil) then
+		self.bCollapsed = ix.gui.categoryCollapsed[self.text]
+	else
+		self.bCollapsed = true
+		ix.gui.categoryCollapsed[self.text] = true
+	end
+end
+
+function PANEL:GetText()
+	return self.text
+end
+
+function PANEL:PerformLayout(width, height)
+	if (IsValid(self.categoryButton)) then
+		self.categoryButton:SetPos(0, 0)
+		self.categoryButton:SetSize(width, self.paddingTop)
+	end
 end
 
 function PANEL:SizeToContents()
 	local height = self.paddingTop + 1
 
 	for _, v in ipairs(self:GetChildren()) do
-		if (IsValid(v) and v:IsVisible()) then
+		if (IsValid(v) and v != self.categoryButton and v:IsVisible()) then
 			local _, top, _, bottom = v:GetDockMargin()
 
 			height = height + v:GetTall() + top + bottom

@@ -94,6 +94,7 @@ function PANEL:Populate()
 		end
 	end
 
+	self:FilterRows("", true)
 	self:SizeToContents()
 end
 
@@ -159,6 +160,7 @@ function PANEL:Populate()
 	end
 
 	self:UpdateUnloaded(true)
+	self:FilterRows("", true)
 	self:SizeToContents()
 end
 

@@ -572,6 +572,9 @@ function PANEL:AddCategory(name)
 		panel:SetText(name)
 		panel:Dock(TOP)
 		panel:DockMargin(0, 8, 0, 0)
+		panel.OnToggled = function(category, bCollapsed)
+			self:FilterRows(self.currentQuery or (self.searchEntry and self.searchEntry:GetValue()) or "")
+		end
 
 		self.categories[name] = panel
 		return panel
@@ -628,14 +631,15 @@ function PANEL:SetSearchEnabled(bValue)
 	end
 end
 
-function PANEL:FilterRows(query)
+function PANEL:FilterRows(query, bInstant)
 	query = string.PatternSafe(query:lower())
+	self.currentQuery = query
 
 	local bEmpty = query == ""
 
 	for categoryName, category in pairs(self.categories) do
 		category.size = 0
-		category:CreateAnimation(0.5, {
+		category:CreateAnimation(bInstant and 0 or 0.5, {
 			index = 21,
 			target = {size = 1},
 
@@ -645,29 +649,46 @@ function PANEL:FilterRows(query)
 		})
 
 		for _, row in ipairs(category:GetChildren()) do
+			if (row == category.categoryButton) then continue end
+
 			local bFound = bEmpty or row:GetText():lower():find(query) or categoryName:lower():find(query)
+			
+			local targetHeight = 0
+			if (bFound and (!category.bCollapsed or !bEmpty)) then
+				targetHeight = row.ixRealHeight
+			end
 
-			row:SetVisible(true)
-			row:CreateAnimation(0.5, {
-				index = 21,
-				target = {ixHeight = bFound and row.ixRealHeight or 0},
-				easing = "outQuint",
+			if (bInstant) then
+				row.ixHeight = targetHeight
+				row:SetTall(targetHeight)
+				row:SetVisible(bFound and targetHeight > 0)
 
-				Think = function(animation, panel)
-					panel:SetTall(bFound and math.min(panel.ixHeight + 2, panel.ixRealHeight) or math.max(panel.ixHeight - 2, 0))
-				end,
-
-				OnComplete = function(animation, panel)
-					panel:SetVisible(bFound)
-
-					-- need this so categories are sized properly when animations are disabled - there is no guaranteed order
-					-- that animations will think so we SizeToContents here. putting it here will result in redundant calls but
-					-- I guess we have the performance to spare
-					if (ix.option.Get("disableAnimations", false)) then
-						category:SizeToContents()
-					end
+				if (ix.option.Get("disableAnimations", false) or targetHeight == 0) then
+					category:SizeToContents()
 				end
-			})
+			else
+				row:SetVisible(true)
+				row:CreateAnimation(0.5, {
+					index = 21,
+					target = {ixHeight = targetHeight},
+					easing = "outQuint",
+
+					Think = function(animation, panel)
+						panel:SetTall(bFound and math.min(panel.ixHeight + 2, panel.ixRealHeight) or math.max(panel.ixHeight - 2, 0))
+					end,
+
+					OnComplete = function(animation, panel)
+						panel:SetVisible(bFound and targetHeight > 0)
+
+						-- need this so categories are sized properly when animations are disabled - there is no guaranteed order
+						-- that animations will think so we SizeToContents here. putting it here will result in redundant calls but
+						-- I guess we have the performance to spare
+						if (ix.option.Get("disableAnimations", false)) then
+							category:SizeToContents()
+						end
+					end
+				})
+			end
 		end
 	end
 end
@@ -760,6 +781,7 @@ hook.Add("CreateMenuButtons", "ixSettings", function(tabs)
 				end
 			end
 
+			panel:FilterRows("", true)
 			panel:SizeToContents()
 			container.panel = panel
 		end,

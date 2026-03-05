@@ -201,6 +201,13 @@ function PLUGIN:OnAreaChanged(oldID, newID)
 
 	if (!area) then
 		client.ixInArea = false
+
+		if (oldID and oldID != "") then
+			local oldArea = ix.area.stored[oldID]
+			client.ixLastAreaName = oldArea and ((oldArea.properties.name and oldArea.properties.name != "") and oldArea.properties.name or oldID) or ""
+			client.ixLastAreaLeaveTime = CurTime()
+		end
+
 		return
 	end
 
@@ -217,6 +224,14 @@ function PLUGIN:OnAreaChanged(oldID, newID)
 	if (oldName == newName) then
 		return
 	end
+
+	if (oldName == "" and client.ixLastAreaName == newName) then
+		if (client.ixLastAreaLeaveTime and CurTime() - client.ixLastAreaLeaveTime < 5) then
+			return
+		end
+	end
+
+	client.ixLastAreaName = newName
 
 	local format = newName .. (ix.option.Get("24hourTime", false) and ", %H:%M." or ", %I:%M %p.")
 	format = ix.date.GetFormatted(format)

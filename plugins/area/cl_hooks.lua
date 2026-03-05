@@ -117,8 +117,9 @@ function PLUGIN:PostDrawTranslucentRenderables(bDepth, bSkybox)
 
 		cam.Start2D()
 			local centerScreen = center:ToScreen()
+			local displayName = (v.properties.name and v.properties.name != "") and v.properties.name or k
 			local _, textHeight = draw.SimpleText(
-				k, "BudgetLabel", centerScreen.x, centerScreen.y, color, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+				displayName, "BudgetLabel", centerScreen.x, centerScreen.y, color, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
 			if (v.type != "area") then
 				draw.SimpleText(
@@ -209,7 +210,15 @@ function PLUGIN:OnAreaChanged(oldID, newID)
 		return
 	end
 
-	local format = newID .. (ix.option.Get("24hourTime", false) and ", %H:%M." or ", %I:%M %p.")
+	local newName = (area.properties.name and area.properties.name != "") and area.properties.name or newID
+	local oldArea = ix.area.stored[oldID]
+	local oldName = oldArea and ((oldArea.properties.name and oldArea.properties.name != "") and oldArea.properties.name or oldID) or ""
+
+	if (oldName == newName) then
+		return
+	end
+
+	local format = newName .. (ix.option.Get("24hourTime", false) and ", %H:%M." or ", %I:%M %p.")
 	format = ix.date.GetFormatted(format)
 
 	self.panel:AddEntry(format, area.properties.color)
@@ -221,6 +230,13 @@ end)
 
 net.Receive("ixAreaEditEnd", function()
 	PLUGIN:StopEditing()
+end)
+
+net.Receive("ixAreaManage", function()
+	if (IsValid(ix.gui.areaManage)) then
+		ix.gui.areaManage:Remove()
+	end
+	vgui.Create("ixAreaManage")
 end)
 
 net.Receive("ixAreaAdd", function()
@@ -259,6 +275,10 @@ net.Receive("ixAreaSync", function()
 
 	-- Set the list of texts to the ones provided by the server.
 	ix.area.stored = util.JSONToTable(uncompressed)
+
+	if (IsValid(ix.gui.areaManage)) then
+		ix.gui.areaManage:Populate()
+	end
 end)
 
 net.Receive("ixAreaChanged", function()

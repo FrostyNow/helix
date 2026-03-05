@@ -126,3 +126,56 @@ net.Receive("ixAreaRemove", function(length, client)
 	ix.area.Remove(id)
 	ix.log.Add(client, "areaRemove", id)
 end)
+
+net.Receive("ixAreaEditProperties", function(length, client)
+	if (!client:Alive() or !CAMI.PlayerHasAccess(client, "Helix - AreaEdit", nil)) then
+		return
+	end
+
+	local oldID = net.ReadString()
+	local newID = net.ReadString()
+	local type = net.ReadString()
+	local properties = net.ReadTable()
+
+	if (!ix.area.stored[oldID]) then
+		client:NotifyLocalized("areaDoesntExist")
+		return
+	end
+
+	if (oldID != newID and ix.area.stored[newID]) then
+		client:NotifyLocalized("areaAlreadyExists")
+		return
+	end
+
+	for k, v in pairs(properties) do
+		if (!isstring(k) or !ix.area.properties[k]) then
+			continue
+		end
+
+		properties[k] = ix.util.SanitizeType(ix.area.properties[k].type, v)
+	end
+    
+	local startPosition = ix.area.stored[oldID].startPosition
+	local endPosition = ix.area.stored[oldID].endPosition
+
+	ix.area.stored[oldID] = nil
+	ix.area.stored[newID] = {
+		type = type,
+		startPosition = startPosition,
+		endPosition = endPosition,
+		bNoReplicate = false,
+		properties = properties
+	}
+	
+	ix.log.Add(client, "areaAdd", newID)
+
+	-- sync areas
+	local json = util.TableToJSON(ix.area.stored)
+	local compressed = util.Compress(json)
+	local len = compressed:len()
+
+	net.Start("ixAreaSync")
+		net.WriteUInt(len, 32)
+		net.WriteData(compressed, len)
+	net.Broadcast()
+end)

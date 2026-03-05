@@ -13,6 +13,14 @@ LANGUAGE = {
 	areaDelete = "구역 삭제",
 	optShowAreas = "구역 ESP 보기",
 	descShowAreas = "관전 상태일 때 모든 구역의 테두리를 표시합니다.",
+	
+	areaID = "ID",
+	areaDisplayName = "표시 이름",
+	comment = "주석",
+	colorCustom = "사용자 지정",
+	colorTheme = "테마",
+	badair = "오염",
 
-	cmdAreaEdit = "구역 수정 모드로 들어갑니다."
+	cmdAreaEdit = "구역 수정 모드로 들어갑니다.",
+	cmdAreaManage = "구역 관리창을 엽니다.",
 }

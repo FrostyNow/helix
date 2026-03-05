@@ -7,6 +7,9 @@ util.AddNetworkString("ixAreaChanged")
 util.AddNetworkString("ixAreaEditStart")
 util.AddNetworkString("ixAreaEditEnd")
 
+util.AddNetworkString("ixAreaManage")
+util.AddNetworkString("ixAreaEditProperties")
+
 ix.log.AddType("areaAdd", function(client, name)
 	return string.format("%s has added area \"%s\".", client:Name(), tostring(name))
 end)

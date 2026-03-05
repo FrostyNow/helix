@@ -40,6 +40,7 @@ end
 function PLUGIN:SetupAreaProperties()
 	ix.area.AddType("area")
 
+	ix.area.AddProperty("name", ix.type.string, "")
 	ix.area.AddProperty("color", ix.type.color, ix.config.Get("color"))
 	ix.area.AddProperty("display", ix.type.bool, true)
 end
@@ -71,6 +72,17 @@ do
 	end
 
 	ix.command.Add("AreaEdit", COMMAND)
+
+	local COMMAND2 = {}
+	COMMAND2.description = "@cmdAreaManage"
+	COMMAND2.adminOnly = true
+
+	function COMMAND2:OnRun(client)
+		net.Start("ixAreaManage")
+		net.Send(client)
+	end
+
+	ix.command.Add("AreaManage", COMMAND2)
 end
 
 do
@@ -79,6 +91,14 @@ do
 	-- returns the current area the player is in, or the last valid one if the player is not in an area
 	function PLAYER:GetArea()
 		return self.ixArea
+	end
+
+	-- returns the display name of the current area, or the area id if not set
+	function PLAYER:GetAreaName()
+		local id = self:GetArea()
+		if (!id or id == "") then return "" end
+		local area = ix.area.stored[id]
+		return area and ((area.properties.name and area.properties.name != "") and area.properties.name or id) or id
 	end
 
 	-- returns true if the player is in any area, this does not use the last valid area like GetArea does

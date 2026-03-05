@@ -14,5 +14,6 @@ LANGUAGE = {
 	optShowAreas = "Show Areas ESP",
 	descShowAreas = "Shows area boundaries when in observer.",
 
-	cmdAreaEdit = "Enters area edit mode."
+	cmdAreaEdit = "Enters area edit mode.",
+	cmdAreaManage = "Opens area management panel.",
 }

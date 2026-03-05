@@ -331,3 +331,11 @@ end
 function ITEM:OnUnequipped()
 	hook.Run("OnItemUnequipped", self, self:GetOwner())
 end
+
+function ITEM:OnEquip()
+	self:Equip(self.player)
+end
+
+function ITEM:OnUnequip()
+	self:Unequip(self.player, true)
+end

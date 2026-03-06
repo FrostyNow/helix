@@ -857,6 +857,21 @@ ix.command.Add("MapRestart", {
 	OnRun = function(self, client, delay, map)
 		delay = delay or 10
 		map = map or game.GetMap()
+
+		if (map != game.GetMap()) then
+			local mapName = map:lower()
+
+			if (mapName:sub(-4) == ".bsp") then
+				mapName = mapName:sub(1, -5)
+			end
+
+			if (!file.Exists("maps/" .. mapName .. ".bsp", "GAME")) then
+				return "@invalid", "map"
+			end
+
+			map = mapName
+		end
+
 		if (map == game.GetMap()) then
 			ix.util.NotifyLocalized("mapRestarting", nil, delay)
 		else

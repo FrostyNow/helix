@@ -114,7 +114,7 @@ if (SERVER) then
 			ix.log.Send(receivers, logString)
 		end)
 
-		Msg("[LOG] ", logString .. "\n")
+		Msg(string.format("[%s] [LOG] ", os.date("%H:%M:%S")), logString .. "\n")
 
 		if (!bNoSave) then
 			ix.log.CallHandler("Write", nil, logString)
@@ -139,7 +139,7 @@ if (SERVER) then
 			ix.log.Send(receivers, logString, logFlag)
 		end)
 
-		Msg("[LOG] ", logString .. "\n")
+		Msg(string.format("[%s] [LOG] ", os.date("%H:%M:%S")), logString .. "\n")
 
 		ix.log.CallHandler("Write", client, logString, logFlag, logType, {...})
 	end

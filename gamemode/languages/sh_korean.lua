@@ -6,8 +6,8 @@ LANGUAGE = {
 	
 	health = "체력",
 	armor = "방어력",
-	stamina = "지구력",
-	stm = "지구력",
+	stamina = "행동력",
+	stm = "행동력",
 
 	introTextOne = "fist industries presents",
 	introTextTwo = "in collaboration with %s",
@@ -15,7 +15,7 @@ LANGUAGE = {
 	
 	helpIdle = "카테고리를 선택하세요",
 	helpCommands = "명령어 매개 변수 중 <화살> 표시는 반드시 입력해야 하고, [꺾음 괄호] 표시는 필요에 따라 입력할 수도 있습니다.",
-	helpFlags = "녹색 바탕의 깃발은 이 캐릭터에게 부여할 수 있습니다.",
+	helpFlags = "녹색 바탕의 항목이 이 캐릭터에게 허용된 플래그입니다.",
 
 	creditSpecial = "Special Thanks",
 	creditLeadDeveloper = "리드 개발자",
@@ -372,7 +372,7 @@ LANGUAGE = {
 	optChatTimestamps = "타임스탬프 켜기",
 	optdChatTimestamps = "대화창에 출력되는 메시지에 타임스탬프를 표시합니다.",
 	optAlwaysShowBars = "상태 바 항상 표시",
-	optdAlwaysShowBars = "체력과 지구력을 비롯한 바를 항상 표시합니다.",
+	optdAlwaysShowBars = "체력과 행동력을 비롯한 바를 항상 표시합니다.",
 	optShowBarLabels = "상태 바 이름 표시",
 	optdShowBarLabels = "각 상태 바의 중앙에 무슨 바인지 이름을 표시합니다.",
 	optAltLower = "주먹 내렸을 때 보이지 않게 하기", -- @todo remove me

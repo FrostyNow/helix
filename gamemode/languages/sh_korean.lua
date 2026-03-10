@@ -17,11 +17,15 @@ LANGUAGE = {
 	helpCommands = "명령어 매개 변수 중 <화살> 표시는 반드시 입력해야 하고, [꺾음 괄호] 표시는 필요에 따라 입력할 수도 있습니다.",
 	helpFlags = "녹색 바탕의 항목이 이 캐릭터에게 허용된 플래그입니다.",
 
-	creditSpecial = "Special Thanks",
+	credits = "크레딧",
+	creditSpecial = "감사한 분들",
 	creditLeadDeveloper = "리드 개발자",
 	creditUIDesigner = "UI 디자이너",
 	creditManager = "프로젝트 매니저",
 	creditTester = "리드 테스터",
+	creditForkDev = "포크 개발자",
+	serverOwner = "서버 운영자",
+	serverAdmin = "서버 관리자",
 
 	chatTyping = "입력 중...",
 	chatTalking = "말하는 중...",

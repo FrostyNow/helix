@@ -22,6 +22,9 @@ LANGUAGE = {
 	creditUIDesigner = "UI Designer",
 	creditManager = "Project Manager",
 	creditTester = "Lead Tester",
+	creditForkDev = "Fork Developer",
+	serverOwner = "Server Owner",
+	serverAdmin = "Server Admin",
 
 	chatTyping = "Typing...",
 	chatTalking = "Talking...",

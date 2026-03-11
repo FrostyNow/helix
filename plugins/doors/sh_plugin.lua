@@ -81,3 +81,6 @@ ix.config.Add("doorLockTime", 1, "How long it takes to (un)lock a door.", nil, {
 	data = {min = 0, max = 10.0, decimals = 1},
 	category = "dConfigName"
 })
+ix.config.Add("allowDoorNameChange", true, "플레이어가 자유롭게 문의 제목(이름)을 변경할 수 있도록 허용할지 여부입니다.", nil, {
+	category = "dConfigName"
+})

@@ -8,7 +8,8 @@ ACCESS_LABELS[DOOR_NONE] = "none"
 
 function PLUGIN:GetDefaultDoorInfo(door)
 	local owner = IsValid(door:GetDTEntity(0)) and door:GetDTEntity(0) or nil
-	local name = door:GetNetVar("title", door:GetNetVar("name", IsValid(owner) and L"dTitleOwned" or L"dTitle"))
+	local offlineOwner = door:GetNetVar("offlineOwner")
+	local name = door:GetNetVar("title", door:GetNetVar("name", (IsValid(owner) or offlineOwner) and L"dTitleOwned" or L"dTitle"))
 	local description = door:GetNetVar("ownable") and L("dIsOwnable") or L("dIsNotOwnable")
 	local color = ix.config.Get("color")
 	local faction = door:GetNetVar("faction")
@@ -22,7 +23,7 @@ function PLUGIN:GetDefaultDoorInfo(door)
 				color = classData.color
 			end
 
-			if (!owner) then
+			if (!owner and !offlineOwner) then
 				description = L("dOwnedBy", L2(classData.name) or classData.name)
 			end
 		end
@@ -30,13 +31,15 @@ function PLUGIN:GetDefaultDoorInfo(door)
 		local info = ix.faction.indices[faction]
 		color = team.GetColor(faction)
 
-		if (info and !owner) then
+		if (info and !owner and !offlineOwner) then
 			description = L("dOwnedBy", L2(info.name) or info.name)
 		end
 	end
 
 	if (owner) then
 		description = L("dOwnedBy", owner:GetName())
+	elseif (offlineOwner) then
+		description = L("dOwnedBy", offlineOwner)
 	end
 
 	return {

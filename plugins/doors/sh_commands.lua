@@ -100,7 +100,7 @@ ix.command.Add("DoorBuy", {
 				hook.Run("OnPlayerPurchaseDoor", client, entity, true, PLUGIN.CallOnDoorChildren)
 
 				ix.log.Add(client, "buydoor")
-				return "@dPurchased", ix.currency.Get(price)
+				return "@dPurchased", ix.currency.Get(price, client)
 			else
 				-- Otherwise tell them they can not.
 				return "@canNotAfford"
@@ -305,6 +305,9 @@ ix.command.Add("DoorSetTitle", {
 
 			-- Check if they are allowed to change the door's name.
 			if (entity:CheckDoorAccess(client, DOOR_TENANT)) then
+				if (!ix.config.Get("allowDoorNameChange", true) and !CAMI.PlayerHasAccess(client, "Helix - Manage Doors", nil)) then
+					return "@dCannotChangeName"
+				end
 				entity:SetNetVar("title", name)
 			elseif (CAMI.PlayerHasAccess(client, "Helix - Manage Doors", nil)) then
 				entity:SetNetVar("name", name)
@@ -492,6 +495,125 @@ ix.command.Add("DoorSetClass", {
 			else
 				return "@invalidClass"
 			end
+		end
+	end
+})
+
+ix.command.Add("DoorSetOwner", {
+	description = "@cmdDoorSetOwner",
+	privilege = "Manage Doors",
+	adminOnly = true,
+	arguments = bit.bor(ix.type.string, ix.type.optional),
+	OnRun = function(self, client, targetName)
+		local entity = client:GetEyeTrace().Entity
+
+		if (IsValid(entity) and entity:IsDoor() and !entity:GetNetVar("disabled")) then
+			entity = IsValid(entity.ixParent) and entity.ixParent or entity
+
+			local function RemoveOldOwner()
+				local oldOwner = entity:GetDTEntity(0)
+				if (IsValid(oldOwner)) then
+					entity:RemoveDoorAccessData()
+
+					local oldChar = oldOwner:GetCharacter()
+					if (oldChar) then
+						local oldDoors = oldChar:GetVar("doors") or {}
+						for k, v in ipairs(oldDoors) do
+							if (v == entity) then
+								table.remove(oldDoors, k)
+								break
+							end
+						end
+						oldChar:SetVar("doors", oldDoors, true)
+					end
+
+					hook.Run("OnPlayerPurchaseDoor", oldOwner, entity, false, PLUGIN.CallOnDoorChildren)
+				end
+
+				entity:SetNetVar("offlineOwner", nil)
+				PLUGIN:CallOnDoorChildren(entity, function(child)
+					child:SetNetVar("offlineOwner", nil)
+				end)
+			end
+
+			-- Remove existing owner
+			RemoveOldOwner()
+
+			if (!targetName or targetName == "") then
+				return "@dOwnerRemoved"
+			end
+
+			-- Is target online?
+			local target = ix.util.FindPlayer(targetName)
+			if (IsValid(target) and target:GetCharacter()) then
+				local targetChar = target:GetCharacter()
+
+				entity:SetDTEntity(0, target)
+				entity.ixAccess = {
+					[target] = DOOR_OWNER
+				}
+
+				PLUGIN:CallOnDoorChildren(entity, function(child)
+					child:SetDTEntity(0, target)
+				end)
+
+				local doors = targetChar:GetVar("doors") or {}
+				doors[#doors + 1] = entity
+				targetChar:SetVar("doors", doors, true)
+
+				hook.Run("OnPlayerPurchaseDoor", target, entity, true, PLUGIN.CallOnDoorChildren)
+
+				return "@dOwnerSet", targetChar:GetName()
+			end
+
+			-- Is target offline? Check database async
+			local query = mysql:Select("ix_characters")
+			query:Select("id")
+			query:Select("name")
+			query:WhereLike("name", targetName)
+			query:Limit(1)
+			query:Callback(function(result)
+				if (istable(result) and #result > 0) then
+					local charID = tonumber(result[1].id)
+					local realName = result[1].name
+					
+					local saver = ix.plugin.Get("doors_saver")
+					if (saver) then
+						local doorID = entity:MapCreationID()
+						if doorID then
+							saver.DOORS_BUFFER[doorID] = charID
+							saver:SaveDoors()
+							
+							entity:SetNetVar("ownable", nil)
+							entity:SetNetVar("offlineOwner", realName)
+							PLUGIN:CallOnDoorChildren(entity, function(child)
+								child:SetNetVar("ownable", nil)
+								child:SetNetVar("offlineOwner", realName)
+							end)
+							entity:Fire("Lock")
+
+							if (IsValid(client)) then
+								client:NotifyLocalized("dOwnerSetOffline", realName)
+							end
+						else
+							if (IsValid(client)) then
+								client:NotifyLocalized("dNoMapCreationID")
+							end
+						end
+					else
+						if (IsValid(client)) then
+							client:NotifyLocalized("dNoSaverPlugin")
+						end
+					end
+				else
+					if (IsValid(client)) then
+						client:NotifyLocalized("dNoCharacterName")
+					end
+				end
+			end)
+			query:Execute()
+		else
+			return "@dNotValid"
 		end
 	end
 })

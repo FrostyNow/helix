@@ -557,7 +557,14 @@ if (SERVER) then
 						invID = v.ixItem.invID,
 						ammo = self:GetAmmoCount(v:GetPrimaryAmmoType())
 					}
-					v.ixItem:Unequip(self, false)
+
+					-- Falling over should not unequip item-backed weapons; keep the item state and
+					-- only strip the live SWEP until the player gets back up.
+					v.ixItem:SetData("ammo", v:Clip1())
+					self.carryWeapons = self.carryWeapons or {}
+					self.carryWeapons[v.ixItem.weaponCategory] = nil
+					v.ixItem = nil
+					self:StripWeapon(v:GetClass())
 				else
 					local clip = v:Clip1()
 					local reserve = self:GetAmmoCount(v:GetPrimaryAmmoType())

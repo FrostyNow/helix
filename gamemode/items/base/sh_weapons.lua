@@ -122,7 +122,7 @@ end
 function ITEM:Equip(client, bNoSelect, bNoSound)
 	client.carryWeapons = client.carryWeapons or {}
 
-	for k, _ in client:GetCharacter():GetInventory():Iter() do
+	for _, k in pairs(client:GetCharacter():GetInventory():GetItems()) do
 		if (k.id != self.id) then
 			local itemTable = ix.item.instances[k.id]
 
@@ -160,7 +160,7 @@ function ITEM:Equip(client, bNoSelect, bNoSound)
 		end
 
 		-- Remove default given ammo.
-		if (client:GetAmmoCount(ammoType) == weapon:Clip1() and self:GetData("ammo", 0) == 0) then
+		if (!self.isGrenade and client:GetAmmoCount(ammoType) == weapon:Clip1() and self:GetData("ammo", 0) == 0) then
 			client:RemoveAmmo(weapon:Clip1(), ammoType)
 		end
 
@@ -174,7 +174,10 @@ function ITEM:Equip(client, bNoSelect, bNoSound)
 
 		if (self.isGrenade) then
 			weapon:SetClip1(1)
-			client:SetAmmo(0, ammoType)
+
+			if (ammoType and ammoType != -1) then
+				client:SetAmmo(1, ammoType)
+			end
 		else
 			weapon:SetClip1(self:GetData("ammo", 0))
 		end
@@ -191,8 +194,45 @@ function ITEM:Equip(client, bNoSelect, bNoSound)
 	end
 end
 
+function ITEM:ConsumeGrenade(client, weapon)
+	if (!self.isGrenade or !IsValid(client) or self.bPendingRemoval or ix.item.instances[self.id] != self) then
+		return false
+	end
+
+	client.carryWeapons = client.carryWeapons or {}
+	weapon = IsValid(weapon) and weapon or client.carryWeapons[self.weaponCategory]
+
+	if (!IsValid(weapon)) then
+		weapon = client:GetWeapon(self.class)
+	end
+
+	self.bPendingRemoval = true
+	client.carryWeapons[self.weaponCategory] = nil
+	self:SetData("ammo", 0)
+	self:SetData("equip", nil)
+	self:RemovePAC(client)
+
+	if (IsValid(weapon)) then
+		weapon.bStrippingGrenade = true
+		weapon.ixItem = nil
+		client:StripWeapon(self.class)
+	end
+
+	if (self.OnUnequipWeapon) then
+		self:OnUnequipWeapon(client, weapon)
+	end
+
+	return self:Remove()
+end
+
 function ITEM:Unequip(client, bPlaySound, bRemoveItem)
 	client.carryWeapons = client.carryWeapons or {}
+
+	if (bRemoveItem and self.isGrenade) then
+		return self:ConsumeGrenade(client)
+	end
+
+	self.bPendingRemoval = bRemoveItem == true
 
 	local weapon = client.carryWeapons[self.weaponCategory]
 
@@ -225,6 +265,8 @@ function ITEM:Unequip(client, bPlaySound, bRemoveItem)
 
 	if (bRemoveItem) then
 		self:Remove()
+	else
+		self.bPendingRemoval = nil
 	end
 end
 
@@ -255,11 +297,24 @@ function ITEM:OnLoadout()
 		local weapon = client:Give(self.class, true)
 
 		if (IsValid(weapon)) then
-			client:RemoveAmmo(weapon:Clip1(), weapon:GetPrimaryAmmoType())
-			client.carryWeapons[self.weaponCategory] = weapon
+			local ammoType = weapon:GetPrimaryAmmoType()
 
+			if (!self.isGrenade) then
+				client:RemoveAmmo(weapon:Clip1(), ammoType)
+			end
+			
+			client.carryWeapons[self.weaponCategory] = weapon
 			weapon.ixItem = self
-			weapon:SetClip1(self:GetData("ammo", 0))
+
+			if (self.isGrenade) then
+				weapon:SetClip1(1)
+
+				if (ammoType and ammoType != -1) then
+					client:SetAmmo(1, ammoType)
+				end
+			else
+				weapon:SetClip1(self:GetData("ammo", 0))
+			end
 
 			if (self.OnEquipWeapon) then
 				self:OnEquipWeapon(client, weapon)
@@ -294,31 +349,74 @@ function ITEM:OnRemoved()
 end
 
 hook.Add("PlayerDeath", "ixStripClip", function(client)
-	client.carryWeapons = {}
+	local character = client:GetCharacter()
 
-	for k, _ in client:GetCharacter():GetInventory():Iter() do
+	if (!character) then
+		return
+	end
+
+	client.carryWeapons = client.carryWeapons or {}
+
+	for _, k in pairs(character:GetInventory():GetItems()) do
 		if (k.isWeapon and k:GetData("equip")) then
-			k:SetData("ammo", nil)
+			local weapon = client.carryWeapons[k.weaponCategory]
+
+			if (!IsValid(weapon)) then
+				weapon = client:GetWeapon(k.class)
+			end
+
+			if (k.isGrenade) then
+				local ammo = k:GetData("ammo", 0)
+
+				if (IsValid(weapon)) then
+					local ammoType = weapon:GetPrimaryAmmoType()
+					ammo = math.max(weapon:Clip1(), 0)
+
+					if (ammoType and ammoType != -1) then
+						ammo = math.max(ammo, client:GetAmmoCount(ammoType))
+					end
+				end
+
+				if (ammo <= 0) then
+					k:ConsumeGrenade(client, weapon)
+					continue
+				end
+
+				k:SetData("ammo", ammo)
+			else
+				k:SetData("ammo", nil)
+			end
+
 			k:SetData("equip", nil)
 
 			if (k.pacData) then
 				k:RemovePAC(client)
 			end
+
+			k:OnUnequipped()
 		end
 	end
+
+	client.carryWeapons = {}
 end)
 
 hook.Add("EntityRemoved", "ixRemoveGrenade", function(entity)
-	-- hack to remove hl2 grenades after they've all been thrown
-	if (entity:GetClass() == "weapon_frag") then
+	local item = entity.ixItem
+
+	-- hack to remove grenades after they've all been thrown
+	if (item and !item.bPendingRemoval and item:GetData("equip") == true and (item.weaponCategory == "grenade" or item.class == "grenade" or item.isGrenade)) then
 		local client = entity:GetOwner()
 
-		if (IsValid(client) and client:IsPlayer() and client:GetCharacter()) then
-			local ammoName = game.GetAmmoName(entity:GetPrimaryAmmoType())
+		if (!IsValid(client)) then
+			client = item:GetOwner()
+		end
 
-			if (isstring(ammoName) and ammoName:lower() == "grenade" and client:GetAmmoCount(ammoName) < 1
-			and entity.ixItem and entity.ixItem.Unequip) then
-				entity.ixItem:Unequip(client, false, true)
+		if (IsValid(client) and client:IsPlayer() and client:GetCharacter()) then
+			local ammoType = entity:GetPrimaryAmmoType()
+
+			-- Allow ammoType == -1 for custom SWEPs that do not use default ammo
+			if (ammoType == -1 or client:GetAmmoCount(ammoType) <= 0) then
+				item:ConsumeGrenade(client, entity)
 			end
 		end
 	end
@@ -338,4 +436,25 @@ end
 
 function ITEM:OnUnequip()
 	self:Unequip(self.player, true)
+end
+
+if (SERVER) then
+	hook.Add("PlayerTick", "ixGrenadeCheck", function(client)
+		if (!client:Alive() or !client:GetCharacter() or !client.carryWeapons) then return end
+
+		for k, weapon in pairs(client.carryWeapons) do
+			if (IsValid(weapon) and weapon.ixItem and weapon.ixItem.isGrenade and not weapon.bStrippingGrenade) then
+				local ammoType = weapon:GetPrimaryAmmoType()
+
+				if (weapon:Clip1() <= 0 and (ammoType == -1 or client:GetAmmoCount(ammoType) <= 0)) then
+					weapon.bStrippingGrenade = true
+					local item = weapon.ixItem
+
+					if (item and IsValid(client) and item:GetData("equip") == true) then
+						item:ConsumeGrenade(client, weapon)
+					end
+				end
+			end
+		end
+	end)
 end

@@ -42,7 +42,7 @@ ix.config.Add("maxAttributes", 100, "The maximum amount each attribute can be.",
 	category = "characters"
 })
 ix.config.Add("chatAutoFormat", true, "Whether or not to automatically capitalize and punctuate in-character text.", nil, {
-	category = "Chat"
+	category = "chat"
 })
 ix.config.Add("chatRange", 280, "The maximum distance a person's IC chat message goes to.", nil, {
 	data = {min = 10, max = 5000, decimals = 1},

@@ -373,6 +373,33 @@ function PANEL:SetTitle(text)
 	end
 end
 
+function PANEL:GetBottomDockedHeight()
+	local height = 0
+
+	for _, child in ipairs(self:GetChildren()) do
+		if (IsValid(child) and child:IsVisible() and child:GetDock() == BOTTOM) then
+			height = height + child:GetTall() + 2
+		end
+	end
+
+	return height
+end
+
+function PANEL:FitToSpace(maxWidth, maxHeight, maxIconSize)
+	if (!self.gridW or !self.gridH) then
+		return
+	end
+
+	local paddingWidth = 8
+	local paddingHeight = self:GetPadding(2) + self:GetPadding(4) + self:GetBottomDockedHeight()
+	local widthLimit = math.floor((math.max(1, maxWidth) - paddingWidth) / self.gridW)
+	local heightLimit = math.floor((math.max(1, maxHeight) - paddingHeight) / self.gridH)
+	local iconSize = math.min(maxIconSize or 64, widthLimit, heightLimit)
+
+	self:SetIconSize(math.max(16, iconSize))
+	self:SetGridSize(self.gridW, self.gridH)
+end
+
 function PANEL:FitParent(invWidth, invHeight)
 	local parent = self:GetParent()
 
@@ -462,7 +489,7 @@ end
 function PANEL:SetGridSize(w, h)
 	local iconSize = self.iconSize
 	local newWidth = w * iconSize + 8
-	local newHeight = h * iconSize + self:GetPadding(2) + self:GetPadding(4)
+	local newHeight = h * iconSize + self:GetPadding(2) + self:GetPadding(4) + self:GetBottomDockedHeight()
 
 	self.gridW = w
 	self.gridH = h

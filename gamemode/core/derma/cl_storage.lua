@@ -133,20 +133,53 @@ function PANEL:OnChildAdded(panel)
 	panel:SetPaintedManually(true)
 end
 
+function PANEL:LayoutInventoryPanels()
+	local margin = 32
+	local spacing = 8
+	local maxWidth = math.floor((self:GetWide() - margin * 2 - spacing) / 2)
+	local maxHeight = self:GetTall() - margin * 2
+	local storagePanel = self.storageInventory
+	local localPanel = ix.gui.inv1
+
+	if (IsValid(storagePanel) and storagePanel.FitToSpace) then
+		storagePanel:FitToSpace(maxWidth, maxHeight, 64)
+	end
+
+	if (IsValid(localPanel) and localPanel.FitToSpace) then
+		localPanel:FitToSpace(maxWidth, maxHeight, 64)
+	end
+
+	local leftWidth = IsValid(storagePanel) and storagePanel:GetWide() or 0
+	local rightWidth = IsValid(localPanel) and localPanel:GetWide() or 0
+	local totalWidth = leftWidth + rightWidth + (IsValid(storagePanel) and IsValid(localPanel) and spacing or 0)
+	local startX = math.floor((self:GetWide() - totalWidth) * 0.5)
+
+	if (IsValid(storagePanel)) then
+		storagePanel:SetPos(startX, math.floor((self:GetTall() - storagePanel:GetTall()) * 0.5))
+	end
+
+	if (IsValid(localPanel)) then
+		localPanel:SetPos(
+			startX + leftWidth + (IsValid(storagePanel) and IsValid(localPanel) and spacing or 0),
+			math.floor((self:GetTall() - localPanel:GetTall()) * 0.5)
+		)
+	end
+end
+
 function PANEL:SetLocalInventory(inventory)
 	if (IsValid(ix.gui.inv1) and !IsValid(ix.gui.menu)) then
 		ix.gui.inv1:SetInventory(inventory)
-		ix.gui.inv1:SetPos(self:GetWide() / 2 + self:GetFrameMargin() / 2, self:GetTall() / 2 - ix.gui.inv1:GetTall() / 2)
+		self:LayoutInventoryPanels()
 	end
 end
 
 function PANEL:SetLocalMoney(money)
 	if (!self.localMoney:IsVisible()) then
 		self.localMoney:SetVisible(true)
-		ix.gui.inv1:SetTall(ix.gui.inv1:GetTall() + self.localMoney:GetTall() + 2)
 	end
 
 	self.localMoney:SetMoney(money)
+	self:LayoutInventoryPanels()
 end
 
 function PANEL:SetStorageTitle(title)
@@ -155,10 +188,7 @@ end
 
 function PANEL:SetStorageInventory(inventory)
 	self.storageInventory:SetInventory(inventory)
-	self.storageInventory:SetPos(
-		self:GetWide() / 2 - self.storageInventory:GetWide() - 2,
-		self:GetTall() / 2 - self.storageInventory:GetTall() / 2
-	)
+	self:LayoutInventoryPanels()
 
 	ix.gui["inv" .. inventory:GetID()] = self.storageInventory
 end
@@ -166,10 +196,24 @@ end
 function PANEL:SetStorageMoney(money)
 	if (!self.storageMoney:IsVisible()) then
 		self.storageMoney:SetVisible(true)
-		self.storageInventory:SetTall(self.storageInventory:GetTall() + self.storageMoney:GetTall() + 2)
 	end
 
 	self.storageMoney:SetMoney(money)
+	self:LayoutInventoryPanels()
+end
+
+function PANEL:Think()
+	local storageTall = IsValid(self.storageInventory) and self.storageInventory:GetTall() or 0
+	local localTall = IsValid(ix.gui.inv1) and ix.gui.inv1:GetTall() or 0
+
+	if (
+		self.ixLastStorageTall != storageTall or
+		self.ixLastLocalTall != localTall
+	) then
+		self.ixLastStorageTall = storageTall
+		self.ixLastLocalTall = localTall
+		self:LayoutInventoryPanels()
+	end
 end
 
 function PANEL:Paint(width, height)

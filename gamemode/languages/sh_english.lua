@@ -414,6 +414,7 @@ LANGUAGE = {
 	cmdCharTakeFlag = "Removes the specified flag(s) from someone if they have it.",
 	cmdToggleRaise = "Raises or lowers the weapon you're holding.",
 	cmdCharSetModel = "Sets a person's character model.",
+	charSetModelOutfitBlocked = "You cannot change a character's model while they are wearing a model-changing outfit.",
 	cmdCharSetSkin = "Sets the skin for a person's character model.",
 	cmdCharSetBodygroup = "Sets the bodygroup for a person's character model.",
 	cmdCharSetAttribute = "Sets the level of the specified attribute for someone.",

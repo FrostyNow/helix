@@ -422,6 +422,7 @@ LANGUAGE = {
 	cmdCharTakeFlag = "해당 플레이어가 플래그를 가지고 있다면 그로부터 플래그를 회수합니다.",
 	cmdToggleRaise = "당신이 들고 있는 무기를 들거나 내립니다.",
 	cmdCharSetModel = "캐릭터 모델을 설정합니다.",
+	charSetModelOutfitBlocked = "대상이 모델을 변경하는 의상을 착용 중일 때는 캐릭터 모델을 변경할 수 없습니다.",
 	cmdCharSetSkin = "캐릭터 모델 스킨을 설정합니다.",
 	cmdCharSetBodygroup = "캐릭터 모델 바디그룹을 설정합니다.",
 	cmdCharSetAttribute = "캐릭터의 특정 능력치 수치를 설정합니다.",

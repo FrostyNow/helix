@@ -71,6 +71,12 @@ end
 -- @realm shared
 -- @treturn bool Whether or not the player has a female model
 function meta:IsFemale()
+	local override = hook.Run("IsPlayerFemale", self)
+
+	if (override != nil) then
+		return override
+	end
+
 	local model = self:GetModel():lower()
 
 	return (model:find("female") or model:find("alyx") or model:find("mossman")) != nil or

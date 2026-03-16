@@ -152,11 +152,23 @@ ix.command.Add("CharSetModel", {
 		ix.type.string
 	},
 	OnRun = function(self, client, target, model)
-		target:SetModel(model)
-		target:GetPlayer():SetupHands()
+		local targetPlayer = target:GetPlayer()
+		local outfitPlugin = ix.plugin.Get("better_outfits")
+
+		if (outfitPlugin and outfitPlugin:HasEquippedModelChangingOutfit(target)) then
+			outfitPlugin:SetTemporaryOutfitModelOverride(target, model)
+			outfitPlugin:ApplyTemporaryOutfitOverrides(targetPlayer, target)
+		else
+			if (outfitPlugin) then
+				outfitPlugin:SetTemporaryOutfitModelOverride(target, nil)
+			end
+
+			target:SetModel(model)
+			targetPlayer:SetupHands()
+		end
 
 		for _, v in player.Iterator() do
-			if (self:OnCheckAccess(v) or v == target:GetPlayer()) then
+			if (self:OnCheckAccess(v) or v == targetPlayer) then
 				v:NotifyLocalized("cChangeModel", client:GetName(), target:GetName(), model)
 			end
 		end
@@ -171,11 +183,29 @@ ix.command.Add("CharSetSkin", {
 		bit.bor(ix.type.number, ix.type.optional)
 	},
 	OnRun = function(self, client, target, skin)
-		target:SetData("skin", skin)
-		target:GetPlayer():SetSkin(skin or 0)
+		local targetPlayer = target:GetPlayer()
+		local outfitPlugin = ix.plugin.Get("better_outfits")
+
+		if (outfitPlugin and outfitPlugin:HasEquippedModelChangingOutfit(target)) then
+			outfitPlugin:SetTemporaryOutfitSkinOverride(target, skin)
+
+			if (skin == nil) then
+				targetPlayer:SetSkin(outfitPlugin:GetExpectedAppearanceSkin(target, targetPlayer))
+				outfitPlugin:ApplyTemporaryOutfitOverrides(targetPlayer, target)
+			else
+				targetPlayer:SetSkin(skin or 0)
+			end
+		else
+			if (outfitPlugin) then
+				outfitPlugin:SetTemporaryOutfitSkinOverride(target, nil)
+			end
+
+			target:SetData("skin", skin)
+			targetPlayer:SetSkin(skin or 0)
+		end
 
 		for _, v in player.Iterator() do
-			if (self:OnCheckAccess(v) or v == target:GetPlayer()) then
+			if (self:OnCheckAccess(v) or v == targetPlayer) then
 				v:NotifyLocalized("cChangeSkin", client:GetName(), target:GetName(), skin or 0)
 			end
 		end

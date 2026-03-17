@@ -420,6 +420,14 @@ function GM:GetDefaultCharacterName(client, faction)
 	local info = ix.faction.indices[faction]
 
 	if (info and info.GetDefaultName) then
+		if (info.forcedName) then
+			if (SERVER) then
+				return
+			end
+
+			return info:GetDefaultName(client), true
+		end
+
 		return info:GetDefaultName(client)
 	end
 end

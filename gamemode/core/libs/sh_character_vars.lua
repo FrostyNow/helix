@@ -27,6 +27,20 @@ ix.char.RegisterVar("groups", {
 
 		local rows = {}
 		local function AddControl(parent, id, data, isSkin)
+			local min = tonumber(data.min) or 0
+			local max = tonumber(data.max) or 0
+			local isFixed = !isSkin and (min == max)
+
+			-- If fixed, we don't need a UI row, but we MUST ensure it's in the payload
+			if (isFixed) then
+				local groups = payload.groups or {}
+				if (groups[id] != min) then
+					groups[id] = min
+					payload:Set("groups", groups)
+				end
+				return nil
+			end
+
 			local row = parent:Add("Panel")
 			row:Dock(TOP)
 			row.bodyGroup = id
@@ -44,7 +58,6 @@ ix.char.RegisterVar("groups", {
 				slider:SetTall(40)
 				
 				slider.Label:SetFont("ixMenuButtonLabelFont")
-				slider.Label:SetFont("ixMenuButtonLabelFont")
 				slider.Label:SetTextColor(color_white)
 				slider.TextArea:SetFont("ixMenuButtonFont")
 				slider.TextArea:SetTextColor(ix.config.Get("color"))
@@ -60,14 +73,14 @@ ix.char.RegisterVar("groups", {
 					payload:Set("skin", val)
 				end
 			else
-				if (data.name) then
-					local label = row:Add("DLabel")
-					label:SetFont("ixMenuButtonLabelFont")
-					label:SetText(L(data.name):utf8upper())
-					label:SizeToContents()
-					label:DockMargin(0, 0, 0, 8)
-					label:Dock(TOP)
-				end
+				local labelName = L(data.name or id):utf8upper()
+
+				local label = row:Add("DLabel")
+				label:SetFont("ixMenuButtonLabelFont")
+				label:SetText(labelName)
+				label:SizeToContents()
+				label:DockMargin(0, 0, 0, 8)
+				label:Dock(TOP)
 
 				local comboBox = row:Add("DComboBox")
 				comboBox:Dock(TOP)
@@ -79,10 +92,7 @@ ix.char.RegisterVar("groups", {
 					surface.DrawRect(0, 0, w, h)
 				end
 
-				local min = data.min or 0
-				local max = data.max or 0
 				local names = data.names
-
 				for i = min, max do
 					local text
 					if (names and names[i]) then
@@ -145,34 +155,11 @@ ix.char.RegisterVar("groups", {
 			
 			-- Handle skin slider dynamically using Entity
 			local skinData = nil
-			--[[
-			local panel = ix.gui.characterMenu
-			
-			if (IsValid(panel) and IsValid(panel.newCharacterPanel)) then
-				local charPanel = panel.newCharacterPanel
-				if (IsValid(charPanel.descriptionModel) and IsValid(charPanel.descriptionModel.Entity)) then
-					local ent = charPanel.descriptionModel.Entity
-					local count = ent:SkinCount()
-					
-					if (count > 1) then
-						skinData = {
-							name = "skin",
-							min = 0,
-							max = count - 1
-						}
-					end
-				end
-			end
-			--]]
-			
 			if (!skinData and faction.skinGroups and modelPath) then
-				local lowerPath = string.lower(modelPath)
-				lowerPath = string.gsub(lowerPath, "\\", "/")
+				local lowerPath = string.lower(modelPath):gsub("\\", "/")
 				
 				for k, v in pairs(faction.skinGroups) do
-					local keyPath = string.lower(k)
-					keyPath = string.gsub(keyPath, "\\", "/")
-					
+					local keyPath = string.lower(k):gsub("\\", "/")
 					if (keyPath == lowerPath) then
 						skinData = v
 						break
@@ -184,19 +171,18 @@ ix.char.RegisterVar("groups", {
 			if (skinData) then
 				AddControl(skinContainer, "skin", skinData, true)
 				skinContainer:SizeToChildren(false, true)
+				skinContainer:DockMargin(0, 0, 0, 16)
 			else
 				skinContainer:SetTall(0)
+				skinContainer:DockMargin(0, 0, 0, 0)
 			end
 			
 			local anyVisible = false
-			
 			for _, row in ipairs(rows) do
 				if (!IsValid(row)) then continue end
 				
 				local visible = true
-				if (row.isSkin) then
-					visible = true
-				elseif (row.excludeModels and modelPath and string.find(modelPath, row.excludeModels)) then
+				if (!row.isSkin and row.excludeModels and modelPath and string.find(modelPath, row.excludeModels)) then
 					visible = false
 				end
 				
@@ -206,12 +192,7 @@ ix.char.RegisterVar("groups", {
 				end
 			end
 			
-			local spacer = wrapper:Add("Panel")
-			spacer:SetTall(16)
-			spacer:Dock(TOP)
-			bodygroupsContainer:DockMargin(0, 16, 0, 0)
-			
-			if (anyVisible or IsValid(skinContainer) and skinContainer:GetTall() > 0) then
+			if (anyVisible or (IsValid(skinContainer) and skinContainer:GetTall() > 0)) then
 				wrapper:SetVisible(true)
 				wrapper:InvalidateLayout(true)
 				wrapper:SizeToChildren(false, true)

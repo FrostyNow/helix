@@ -69,7 +69,10 @@ function ITEM:RemovePart(client)
 	local char = client:GetCharacter()
 
 	self:SetData("equip", false)
-	client:RemovePart(self.uniqueID)
+
+	if (pac and IsValid(client)) then
+		client:RemovePart(self.uniqueID)
+	end
 
 	if (self.attribBoosts) then
 		for k, _ in pairs(self.attribBoosts) do
@@ -112,6 +115,11 @@ ITEM.functions.Equip = {
 	icon = "icon16/tick.png",
 	OnRun = function(item)
 		local char = item.player:GetCharacter()
+
+		if (!pac) then
+			item.player:NotifyLocalized("PAC3 is not installed on this server!")
+			return false
+		end
 
 		for k, _ in char:GetInventory():Iter() do
 			if (k.id != item.id) then
@@ -170,4 +178,14 @@ end
 
 function ITEM:OnUnequipped()
 	hook.Run("OnItemUnequipped", self, self:GetOwner())
+end
+
+function ITEM:OnLoadout()
+	if (self:GetData("equip")) then
+		local client = self.player or self:GetOwner()
+
+		if (pac and IsValid(client)) then
+			client:AddPart(self.uniqueID, self)
+		end
+	end
 end

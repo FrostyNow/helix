@@ -31,6 +31,13 @@ do
 			return parent:CheckDoorAccess(client, access)
 		end
 
+		local offlineOwner = self:GetNetVar("offlineOwner")
+		local character = client:GetCharacter()
+
+		if (offlineOwner and character and offlineOwner == character:GetName()) then
+			return true
+		end
+
 		if (hook.Run("CanPlayerAccessDoor", client, self, access)) then
 			return true
 		end
@@ -59,10 +66,12 @@ do
 
 			self.ixAccess = {}
 			self:SetDTEntity(0, nil)
+			self:SetNetVar("offlineOwner", nil)
 
 			-- Remove door information on child doors
 			PLUGIN:CallOnDoorChildren(self, function(child)
 				child:SetDTEntity(0, nil)
+				child:SetNetVar("offlineOwner", nil)
 			end)
 		end
 	end

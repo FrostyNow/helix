@@ -534,6 +534,15 @@ ix.command.Add("DoorSetOwner", {
 				PLUGIN:CallOnDoorChildren(entity, function(child)
 					child:SetNetVar("offlineOwner", nil)
 				end)
+
+				local saver = ix.plugin.Get("doors_saver")
+				if (saver) then
+					local doorID = entity:MapCreationID()
+					if doorID then
+						saver.DOORS_BUFFER[doorID] = nil
+						saver:SaveDoors()
+					end
+				end
 			end
 
 			-- Remove existing owner

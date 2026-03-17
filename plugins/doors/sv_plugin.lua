@@ -17,7 +17,9 @@ local variables = {
 	-- The class that owns a door.
 	"class",
 	-- Whether or not the door will be hidden.
-	"visible"
+	"visible",
+	-- The name of the offline owner.
+	"offlineOwner"
 }
 
 function PLUGIN:CallOnDoorChildren(entity, callback)
@@ -158,6 +160,52 @@ end
 
 -- Whether or not a player a player has any abilities over the door, such as locking.
 function PLUGIN:CanPlayerAccessDoor(client, door, access)
+	local offlineOwner = door:GetNetVar("offlineOwner")
+	local character = client:GetCharacter()
+
+	if (offlineOwner and character and offlineOwner == character:GetName()) then
+		if (!IsValid(door:GetDTEntity(0))) then
+			door:SetDTEntity(0, client)
+			door.ixAccess = door.ixAccess or {}
+			door.ixAccess[client] = DOOR_OWNER
+			door:SetNetVar("offlineOwner", nil)
+			door:SetNetVar("ownable", true)
+
+			local saver = ix.plugin.Get("doors_saver")
+			if (saver) then
+				local doorID = door:MapCreationID()
+				if (doorID) then
+					saver.DOORS_BUFFER[doorID] = character:GetID()
+					saver:SaveDoors()
+				end
+			end
+
+			self:CallOnDoorChildren(door, function(child)
+				child:SetDTEntity(0, client)
+				child:SetNetVar("offlineOwner", nil)
+				child:SetNetVar("ownable", true)
+			end)
+
+			local doors = character:GetVar("doors") or {}
+			local alreadyHas = false
+			for _, v in ipairs(doors) do
+				if (v == door) then
+					alreadyHas = true
+					break
+				end
+			end
+
+			if (!alreadyHas) then
+				doors[#doors + 1] = door
+				character:SetVar("doors", doors, true)
+			end
+
+			hook.Run("OnPlayerPurchaseDoor", client, door, true, self.CallOnDoorChildren)
+		end
+
+		return true
+	end
+
 	local faction = door:GetNetVar("faction")
 
 	-- If the door has a faction set which the client is a member of, allow access.

@@ -109,6 +109,7 @@ function PANEL:Think()
 	local bShouldHide = hook.Run("ShouldHideBars")
 	local bAlwaysShow = ix.option.Get("alwaysShowBars", false)
 	local bShowLabels = ix.option.Get("showBarLabels", false)
+	local bCursorVisible = vgui.CursorVisible()
 
 	for _, v in ipairs(self.bars) do
 		local info = ix.bar.list[v:GetID()]
@@ -119,7 +120,7 @@ function PANEL:Think()
 			continue
 		end
 
-		if (v:GetDelta() != realValue) then
+		if (bCursorVisible or v:GetDelta() != realValue) then
 			v:SetLifetime(curTime + 5)
 		end
 

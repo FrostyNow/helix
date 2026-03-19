@@ -185,6 +185,7 @@ ix.command.Add("CharSetSkin", {
 	OnRun = function(self, client, target, skin)
 		local targetPlayer = target:GetPlayer()
 		local outfitPlugin = ix.plugin.Get("better_outfits")
+		local bodygroupPlugin = ix.plugin.Get("bodygroupmanager")
 
 		if (outfitPlugin and outfitPlugin:HasEquippedModelChangingOutfit(target)) then
 			outfitPlugin:SetTemporaryOutfitSkinOverride(target, skin)
@@ -200,7 +201,11 @@ ix.command.Add("CharSetSkin", {
 				outfitPlugin:SetTemporaryOutfitSkinOverride(target, nil)
 			end
 
-			target:SetData("skin", skin)
+			if (bodygroupPlugin) then
+				bodygroupPlugin:SetPersistentAppearance(target, nil, skin)
+			else
+				target:SetData("skin", skin)
+			end
 			targetPlayer:SetSkin(skin or 0)
 		end
 

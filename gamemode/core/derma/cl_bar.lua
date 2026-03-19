@@ -121,7 +121,7 @@ function PANEL:Think()
 		end
 
 		if (bCursorVisible or v:GetDelta() != realValue) then
-			v:SetLifetime(curTime + 5)
+			v:SetLifetime(curTime + 2)
 		end
 
 		if (v:GetLifetime() < curTime and !info.visible and !bAlwaysShow and !hook.Run("ShouldBarDraw", info)) then

@@ -128,6 +128,7 @@ function PANEL:SetHidden(hidden)
 		end
 	else
 		self:SetAmbientLight(Color(20, 20, 20))
+		self:SetColor(color_white)
 		self:SetAlpha(255)
 
 		for i = 0, 5 do

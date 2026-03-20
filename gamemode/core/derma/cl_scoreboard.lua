@@ -150,11 +150,12 @@ end
 function PANEL:SetModel(model, skin, bodygroups)
 	model = model:gsub("\\", "/")
 	self:ClearDynamicRenderer()
+	self.bodygroups = BODYGROUPS_EMPTY
 
 	if (isstring(bodygroups)) then
-		if (bodygroups:len() == 9) then
+		if (bodygroups:len() > 0 and bodygroups:len() <= BODYGROUPS_EMPTY:len()) then
 			for i = 1, bodygroups:len() do
-				self:SetBodygroup(i, tonumber(bodygroups[i]) or 0)
+				self:SetBodygroup(i - 1, tonumber(bodygroups[i]) or 0)
 			end
 		else
 			self.bodygroups = BODYGROUPS_EMPTY

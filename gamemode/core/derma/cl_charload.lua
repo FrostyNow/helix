@@ -8,26 +8,30 @@ local function SetCharacter(self, character)
 	self.character = character
 
 	if (character) then
-		self:SetModel(character:GetModel())
-		self:SetSkin(character:GetData("skin", 0))
+		local outfitPlugin = ix.plugin.Get("better_outfits") or ix.plugin.Get("better_armor")
 
-		for i = 0, (self:GetNumBodyGroups() - 1) do
-			self:SetBodygroup(i, 0)
-		end
+		if (!outfitPlugin or !outfitPlugin:ApplyCharacterPreviewAppearance(character, self)) then
+			self:SetModel(character:GetModel())
+			self:SetSkin(character:GetData("skin", 0))
 
-		local bodygroups = character:GetData("groups", nil)
+			for i = 0, (self:GetNumBodyGroups() - 1) do
+				self:SetBodygroup(i, 0)
+			end
 
-		if (istable(bodygroups)) then
-			for k, v in pairs(bodygroups) do
-				if (k == "skin") then
-					self:SetSkin(tonumber(v) or 0)
-					continue
-				end
+			local bodygroups = character:GetData("groups", nil)
 
-				local index = tonumber(k) or self:FindBodygroupByName(k)
+			if (istable(bodygroups)) then
+				for k, v in pairs(bodygroups) do
+					if (k == "skin") then
+						self:SetSkin(tonumber(v) or 0)
+						continue
+					end
 
-				if (index and index > -1) then
-					self:SetBodygroup(index, tonumber(v) or 0)
+					local index = tonumber(k) or self:FindBodygroupByName(k)
+
+					if (index and index > -1) then
+						self:SetBodygroup(index, tonumber(v) or 0)
+					end
 				end
 			end
 		end
@@ -335,32 +339,41 @@ function PANEL:Init()
 	self.delete = self:AddSubpanel("delete")
 	self.delete:SetTitle(nil)
 	self.delete.OnSetActive = function()
-		local model = self.character:GetModel()
+		local outfitPlugin = ix.plugin.Get("better_outfits") or ix.plugin.Get("better_armor")
+		local applied = false
 
-		self.deleteModel:SetModel(model)
-		self.deleteModel:SetSkin(self.character:GetData("skin", 0))
-		if (IsValid(self.deleteModel.Entity)) then
-			self.deleteModel.Entity:SetSkin(self.character:GetData("skin", 0))
+		if (outfitPlugin and IsValid(self.deleteModel.Entity)) then
+			applied = outfitPlugin:ApplyCharacterPreviewAppearance(self.character, self.deleteModel.Entity)
 		end
 
-		local bodygroups = self.character:GetData("groups", nil)
+		if (!applied) then
+			local model = self.character:GetModel()
 
-		if (istable(bodygroups)) then
-			for k, v in pairs(bodygroups) do
-				if (k == "skin") then
-					local skinValue = tonumber(v) or 0
-					self.deleteModel:SetSkin(skinValue)
+			self.deleteModel:SetModel(model)
+			self.deleteModel:SetSkin(self.character:GetData("skin", 0))
+			if (IsValid(self.deleteModel.Entity)) then
+				self.deleteModel.Entity:SetSkin(self.character:GetData("skin", 0))
+			end
 
-					if (IsValid(self.deleteModel.Entity)) then
-						self.deleteModel.Entity:SetSkin(skinValue)
+			local bodygroups = self.character:GetData("groups", nil)
+
+			if (istable(bodygroups) and IsValid(self.deleteModel.Entity)) then
+				for k, v in pairs(bodygroups) do
+					if (k == "skin") then
+						local skinValue = tonumber(v) or 0
+						self.deleteModel:SetSkin(skinValue)
+
+						if (IsValid(self.deleteModel.Entity)) then
+							self.deleteModel.Entity:SetSkin(skinValue)
+						end
+						continue
 					end
-					continue
-				end
 
-				local index = tonumber(k) or self.deleteModel.Entity:FindBodygroupByName(k)
+					local index = tonumber(k) or self.deleteModel.Entity:FindBodygroupByName(k)
 
-				if (index and index > -1) then
-					self.deleteModel.Entity:SetBodygroup(index, tonumber(v) or 0)
+					if (index and index > -1) then
+						self.deleteModel.Entity:SetBodygroup(index, tonumber(v) or 0)
+					end
 				end
 			end
 		end

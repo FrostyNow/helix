@@ -1,4 +1,8 @@
 
+local function GetAppearancePlugin()
+	return ix.plugin.Get("better_outfits") or ix.plugin.Get("better_armor")
+end
+
 ix.command.Add("Roll", {
 	description = "@cmdRoll",
 	arguments = bit.bor(ix.type.number, ix.type.optional),
@@ -153,7 +157,7 @@ ix.command.Add("CharSetModel", {
 	},
 	OnRun = function(self, client, target, model)
 		local targetPlayer = target:GetPlayer()
-		local outfitPlugin = ix.plugin.Get("better_outfits")
+		local outfitPlugin = GetAppearancePlugin()
 
 		if (outfitPlugin and outfitPlugin:HasEquippedModelChangingOutfit(target)) then
 			outfitPlugin:SetTemporaryOutfitModelOverride(target, model)
@@ -184,7 +188,7 @@ ix.command.Add("CharSetSkin", {
 	},
 	OnRun = function(self, client, target, skin)
 		local targetPlayer = target:GetPlayer()
-		local outfitPlugin = ix.plugin.Get("better_outfits")
+		local outfitPlugin = GetAppearancePlugin()
 		local bodygroupPlugin = ix.plugin.Get("bodygroupmanager")
 
 		if (outfitPlugin and outfitPlugin:HasEquippedModelChangingOutfit(target)) then

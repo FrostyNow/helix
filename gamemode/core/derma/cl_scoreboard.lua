@@ -37,6 +37,87 @@ end
 
 local adminAnonHintColor = Color(170, 170, 170)
 
+local function BuildScoreboardIconState(client)
+	local state = {
+		bodygroups = "",
+		signature = "",
+		indexed = {},
+		requiresDynamic = false
+	}
+
+	if (!IsValid(client)) then
+		return state
+	end
+
+	local groups = client:GetBodyGroups()
+
+	if (!istable(groups) or #groups == 0) then
+		return state
+	end
+
+	local entries = {}
+
+	for _, group in ipairs(groups) do
+		local index = tonumber(group.id)
+
+		if (index and index >= 0) then
+			local value = math.max(tonumber(client:GetBodygroup(index)) or 0, 0)
+
+			entries[#entries + 1] = {
+				index = index,
+				value = value
+			}
+		end
+	end
+
+	if (#entries == 0) then
+		return state
+	end
+
+	table.sort(entries, function(a, b)
+		return a.index < b.index
+	end)
+
+	local digits = {}
+	local lastIndex = entries[#entries].index
+	local signatureParts = {}
+
+	for bodygroupIndex = 0, lastIndex do
+		digits[bodygroupIndex + 1] = "0"
+	end
+
+	for _, entry in ipairs(entries) do
+		state.indexed[entry.index] = entry.value
+		signatureParts[#signatureParts + 1] = entry.index .. "=" .. entry.value
+		digits[entry.index + 1] = tostring(math.min(entry.value, 9))
+
+		if (entry.index > 8 or entry.value > 9) then
+			state.requiresDynamic = true
+		end
+	end
+
+	state.signature = table.concat(signatureParts, ";")
+	state.bodygroups = table.concat(digits, "", 1, #digits)
+
+	if (state.bodygroups:match("^0+$")) then
+		state.bodygroups = ""
+	end
+
+	return state
+end
+
+local function CleanupScoreboardIcon(icon)
+	if (icon.id) then
+		hook.Remove("SpawniconGenerated", icon.id)
+		icon.id = nil
+	end
+
+	if (IsValid(icon.renderer)) then
+		icon.renderer:Remove()
+		icon.renderer = nil
+	end
+end
+
 AccessorFunc(PANEL, "model", "Model", FORCE_STRING)
 AccessorFunc(PANEL, "bHidden", "Hidden", FORCE_BOOL)
 
@@ -45,8 +126,30 @@ function PANEL:Init()
 	self.bodygroups = BODYGROUPS_EMPTY
 end
 
+function PANEL:GetBodygroupString()
+	return self.bodygroups or ""
+end
+
+function PANEL:GetBodygroupSignature()
+	return self.ixBodygroupSignature or ""
+end
+
+function PANEL:SetBodygroupSignature(signature)
+	self.ixBodygroupSignature = signature or ""
+end
+
+function PANEL:ClearDynamicRenderer()
+	self.ixUseDynamicRenderer = false
+
+	if (IsValid(self.ixDynamicRenderer)) then
+		self.ixDynamicRenderer:Remove()
+		self.ixDynamicRenderer = nil
+	end
+end
+
 function PANEL:SetModel(model, skin, bodygroups)
 	model = model:gsub("\\", "/")
+	self:ClearDynamicRenderer()
 
 	if (isstring(bodygroups)) then
 		if (bodygroups:len() == 9) then
@@ -93,7 +196,12 @@ function PANEL:SetModel(model, skin, bodygroups)
 end
 
 function PANEL:SetBodygroup(k, v)
-	if (k < 0 or k > 8 or v < 0 or v > 9) then
+	if (k < 0 or v < 0) then
+		return
+	end
+
+	if (k > 8 or v > 9) then
+		self.bodygroups = ""
 		return
 	end
 
@@ -106,6 +214,52 @@ end
 
 function PANEL:GetSkin()
 	return self.skin or 1
+end
+
+function PANEL:SetHidden(hidden)
+	self.bHidden = tobool(hidden)
+
+	if (IsValid(self.ixDynamicRenderer)) then
+		local adminCanSeeHidden = self.bHidden and IsValid(LocalPlayer()) and LocalPlayer():IsAdmin()
+		self.ixDynamicRenderer:SetHidden(self.bHidden and !adminCanSeeHidden)
+		self.ixDynamicRenderer:SetVisible(true)
+	end
+end
+
+function PANEL:SetDynamicRenderer(model, skin, bodygroups, signature)
+	if (!isstring(model) or model == "") then
+		return
+	end
+
+	self.model = model:gsub("\\", "/")
+	self.skin = skin
+	self:SetBodygroupSignature(signature)
+	CleanupScoreboardIcon(self)
+	self.material = nil
+	self.ixUseDynamicRenderer = true
+
+	if (!IsValid(self.ixDynamicRenderer)) then
+		self.ixDynamicRenderer = self:Add("ixSpawnIcon")
+		self.ixDynamicRenderer:Dock(FILL)
+		self.ixDynamicRenderer:SetMouseInputEnabled(false)
+		self.ixDynamicRenderer.LayoutEntity = function(panel, entity)
+			entity:SetIK(false)
+			entity:SetPlaybackRate(0)
+			entity:SetCycle(0)
+			entity:SetPoseParameter("head_pitch", 0)
+			entity:SetPoseParameter("head_yaw", 0)
+			entity:SetPoseParameter("aim_pitch", 0)
+			entity:SetPoseParameter("aim_yaw", 0)
+			entity:SetPoseParameter("eyes_pitch", 0)
+			entity:SetPoseParameter("eyes_yaw", 0)
+			panel:RunAnimation()
+		end
+	end
+
+	local adminCanSeeHidden = self.bHidden and IsValid(LocalPlayer()) and LocalPlayer():IsAdmin()
+	self.ixDynamicRenderer:SetModel(self.model, skin, self.bHidden and !adminCanSeeHidden, bodygroups)
+	self.ixDynamicRenderer:SetHidden(self.bHidden and !adminCanSeeHidden)
+	self.ixDynamicRenderer:SetVisible(true)
 end
 
 function PANEL:DoClick()
@@ -123,6 +277,15 @@ function PANEL:OnMouseReleased(key)
 end
 
 function PANEL:Paint(width, height)
+	if (self.ixUseDynamicRenderer and IsValid(self.ixDynamicRenderer)) then
+		if (self.bHidden and LocalPlayer():IsAdmin()) then
+			surface.SetDrawColor(0, 0, 0, 110)
+			surface.DrawRect(0, 0, width, height)
+		end
+
+		return
+	end
+
 	if (!self.material) then
 		return
 	end
@@ -143,10 +306,16 @@ function PANEL:Paint(width, height)
 	surface.DrawTexturedRect(0, 0, width, height)
 end
 
-function PANEL:Remove()
-	if (self.id) then
-		hook.Remove("SpawniconGenerated", self.id)
+function PANEL:Think()
+	if (self.ixUseDynamicRenderer and IsValid(self.ixDynamicRenderer)) then
+		local adminCanSeeHidden = self.bHidden and IsValid(LocalPlayer()) and LocalPlayer():IsAdmin()
+		self.ixDynamicRenderer:SetHidden(self.bHidden and !adminCanSeeHidden)
 	end
+end
+
+function PANEL:OnRemove()
+	self:ClearDynamicRenderer()
+	CleanupScoreboardIcon(self)
 end
 
 vgui.Register("ixScoreboardIcon", PANEL, "Panel")
@@ -222,6 +391,7 @@ function PANEL:Update()
 	local client = self.player
 	local model = client:GetModel()
 	local skin = client:GetSkin()
+	local iconState = BuildScoreboardIconState(client)
 	local name = hook.Run("GetCharacterName", client) or client:GetName()
 	local description = hook.Run("GetCharacterDescription", client) or
 		(client:GetCharacter() and client:GetCharacter():GetDescription()) or ""
@@ -237,16 +407,29 @@ function PANEL:Update()
 
 	self.icon:SetHidden(!bRecognize)
 	self:SetZPos(bRecognize and 1 or 2)
+	local previousSignature = self.icon:GetBodygroupSignature()
 
-	-- no easy way to check bodygroups so we'll just set them anyway
-	for _, v in pairs(client:GetBodyGroups()) do
-		self.icon:SetBodygroup(v.id, client:GetBodygroup(v.id))
-	end
-
-	if (self.icon:GetModel() != model or self.icon:GetSkin() != skin) then
-		self.icon:SetModel(model, skin)
+	if (iconState.requiresDynamic) then
+		if (
+			self.icon:GetModel() != model
+			or self.icon:GetSkin() != skin
+			or !self.icon.ixUseDynamicRenderer
+			or previousSignature != iconState.signature
+		) then
+			self.icon:SetDynamicRenderer(model, skin, iconState.indexed, iconState.signature)
+			self.icon:SetTooltip(nil)
+		end
+	elseif (
+		self.icon:GetModel() != model
+		or self.icon:GetSkin() != skin
+		or self.icon.ixUseDynamicRenderer
+		or self.icon:GetBodygroupString() != iconState.bodygroups
+	) then
+		self.icon:SetModel(model, skin, iconState.bodygroups)
 		self.icon:SetTooltip(nil)
 	end
+
+	self.icon:SetBodygroupSignature(iconState.signature)
 
 	if (self.name:GetText() != name) then
 		self.name:SetText(name)

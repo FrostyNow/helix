@@ -14,12 +14,9 @@ function PLUGIN:PlayerLoadout(client)
 		local points
 		local className = "default"
 
-		for k, v in ipairs(ix.faction.indices) do
-			if (k == client:Team()) then
-				points = self.spawns[v.uniqueID] or {}
-
-				break
-			end
+		local faction = ix.faction.indices[client:Team()]
+		if (faction) then
+			points = self.spawns[faction.uniqueID] or {}
 		end
 
 		if (points) then
@@ -35,8 +32,12 @@ function PLUGIN:PlayerLoadout(client)
 
 			if (points and !table.IsEmpty(points)) then
 				local position = points[ math.random( #points ) ]
-
-				client:SetPos(position)
+				
+				if (isvector(position)) then
+					client:SetPos(position)
+				else
+					ix.util.SchemaError("Invalid spawn point detected for faction: " .. (faction and faction.uniqueID or "unknown") .. "\n")
+				end
 			end
 		end
 	end
@@ -128,15 +129,21 @@ ix.command.Add("SpawnRemove", {
 		local i = 0
 
 		for _, v in pairs(PLUGIN.spawns) do
-			for _, v2 in pairs(v) do
-				for k3, v3 in pairs(v2) do
-					if (v3:Distance(position) <= radius) then
-						v2[k3] = nil
+			for class, points in pairs(v) do
+				local newPoints = {}
+
+				for _, point in pairs(points) do
+					if (point:Distance(position) > radius) then
+						table.insert(newPoints, point)
+					else
 						i = i + 1
 					end
 				end
+
+				v[class] = newPoints
 			end
 		end
+
 
 		if (i > 0) then
 			PLUGIN:SaveSpawns()

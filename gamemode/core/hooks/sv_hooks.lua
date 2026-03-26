@@ -627,10 +627,12 @@ function GM:DoPlayerDeath(client, attacker, damageinfo)
 		end
 	end
 
-	net.Start("ixPlayerDeath")
-	net.Send(client)
+	if (client:GetCharacter()) then
+		net.Start("ixPlayerDeath")
+		net.Send(client)
 
-	client:SetAction("@respawning", ix.config.Get("spawnTime", 5))
+		client:SetAction("@respawning", ix.config.Get("spawnTime", 5))
+	end
 	client:SetDSP(31)
 end
 

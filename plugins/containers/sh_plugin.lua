@@ -38,8 +38,8 @@ ix.lang.AddTable("english", {
 	containerWashingMachineDesc = "A machine for washing clothes, sheets, and other things made of cloth.",
 	containerDeskDesc = "A table with drawers that you can work at.",
 	containerMetalDeskDesc = "A table with drawers that you can work at.",
-	containerCombineCrateDesc = "A heavy crate for stores ammunition that is made of Combine metal.",
 })
+
 ix.lang.AddTable("korean", {
 	["Crate"] = "나무 상자",
 	containerCrateDesc = "평범한 나무 상자입니다.",
@@ -81,8 +81,6 @@ ix.lang.AddTable("korean", {
 	containerDeskDesc = "서랍이 달린 사무용 탁자입니다.",
 	["Metal Desk"] = "금속 책상",
 	containerMetalDeskDesc = "서랍이 달린 사무용 탁자입니다.",
-	["Combine Crate"] = "콤바인 상자",
-	containerCombineCrateDesc = "콤바인 금속으로 된 무거운 보급품 상자입니다.",
 })
 
 function ix.container.Register(model, data)

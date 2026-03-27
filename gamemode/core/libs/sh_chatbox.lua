@@ -217,42 +217,42 @@ function ix.chat.Register(chatType, data)
 	data.uniqueID = chatType
 	ix.chat.classes[chatType] = data
 
-	if (CLIENT) then
-		local oldOnChatAdd = data.OnChatAdd
+	-- if (CLIENT) then
+	-- 	local oldOnChatAdd = data.OnChatAdd
 
-		data.OnChatAdd = function(self, speaker, text, anonymous, info)
-			if (ix.config.Get("chatTransparency", false) and IsValid(speaker) and speaker:IsPlayer() and self.range) then
-				local speakPos = speaker:GetPos()
-				local pos = hook.Run("GetChatSpeakPos", speaker, chatType) or speakPos
-				local dist = LocalPlayer():GetPos():Distance(pos)
-				local maxDist = math.sqrt(self.range)
-				local halfDist = maxDist / 2
+	-- 	data.OnChatAdd = function(self, speaker, text, anonymous, info)
+	-- 		if (ix.config.Get("chatTransparency", false) and IsValid(speaker) and speaker:IsPlayer() and self.range) then
+	-- 			local speakPos = speaker:GetPos()
+	-- 			local pos = hook.Run("GetChatSpeakPos", speaker, chatType) or speakPos
+	-- 			local dist = LocalPlayer():GetPos():Distance(pos)
+	-- 			local maxDist = math.sqrt(self.range)
+	-- 			local halfDist = maxDist / 2
 
-				if (dist > halfDist) then
-					local alpha = Lerp(math.min((dist - halfDist) / halfDist, 1), 255, 127)
-					local oldChatAddText = chat.AddText
+	-- 			if (dist > halfDist) then
+	-- 				local alpha = Lerp(math.min((dist - halfDist) / halfDist, 1), 255, 127)
+	-- 				local oldChatAddText = chat.AddText
 
-					chat.AddText = function(...)
-						local args = {...}
+	-- 				chat.AddText = function(...)
+	-- 					local args = {...}
 
-						for k, v in ipairs(args) do
-							if (istable(v) and v.r and v.g and v.b) then
-								args[k] = Color(v.r, v.g, v.b, alpha)
-							end
-						end
+	-- 					for k, v in ipairs(args) do
+	-- 						if (istable(v) and v.r and v.g and v.b) then
+	-- 							args[k] = Color(v.r, v.g, v.b, alpha)
+	-- 						end
+	-- 					end
 
-						oldChatAddText(unpack(args))
-					end
+	-- 					oldChatAddText(unpack(args))
+	-- 				end
 
-					oldOnChatAdd(self, speaker, text, anonymous, info)
-					chat.AddText = oldChatAddText
-					return
-				end
-			end
+	-- 				oldOnChatAdd(self, speaker, text, anonymous, info)
+	-- 				chat.AddText = oldChatAddText
+	-- 				return
+	-- 			end
+	-- 		end
 
-			oldOnChatAdd(self, speaker, text, anonymous, info)
-		end
-	end
+	-- 		oldOnChatAdd(self, speaker, text, anonymous, info)
+	-- 	end
+	-- end
 end
 
 --- Identifies which chat mode should be used.

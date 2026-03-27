@@ -40,7 +40,7 @@ function PLUGIN:CanProperty(client, property, entity)
 	local class = IsValid(entity) and entity:GetClass()
 
 	if (class == "ix_vendor" or class == "ix_vendor_new") then
-		if (property == "remover" or property == "ignite" or property == "extinguish" or property == "drive" or property == "disintegrate") then
+		if (property == "remover" or property == "ignite" or property == "extinguish" or property == "drive" or property == "rb655_dissolve") then
 			return false
 		end
 	end

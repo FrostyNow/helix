@@ -9,6 +9,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar("Int", 0, "ID")
 	self:NetworkVar("Bool", 0, "Locked")
 	self:NetworkVar("String", 0, "DisplayName")
+	self:NetworkVar("Bool", 1, "Fixed")
 end
 
 if (SERVER) then

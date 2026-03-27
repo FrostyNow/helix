@@ -129,10 +129,13 @@ if (SERVER) then
 		local data = {}
 
 		for _, v in ipairs(ents.FindByClass("ix_container")) do
-			if (hook.Run("CanSaveContainer", v, v:GetInventory()) != false) then
-				local inventory = v:GetInventory()
+			local inventory = v:GetInventory()
 
+			if (hook.Run("CanSaveContainer", v, inventory) != false) then
 				if (inventory) then
+					local phys = v:GetPhysicsObject()
+					local bFixed = (IsValid(phys) and !phys:IsMoveable())
+
 					data[#data + 1] = {
 						v:GetPos(),
 						v:GetAngles(),
@@ -140,7 +143,8 @@ if (SERVER) then
 						v:GetModel(),
 						v.password,
 						v:GetDisplayName(),
-						v:GetMoney()
+						v:GetMoney(),
+						bFixed
 					}
 				end
 			else
@@ -169,6 +173,25 @@ if (SERVER) then
 		self:SaveContainer()
 	end
 
+	function PLUGIN:PhysgunDrop(client, entity)
+		if (entity:GetClass() == "ix_container") then
+			local phys = entity:GetPhysicsObject()
+
+			if (IsValid(phys)) then
+				entity:SetFixed(!phys:IsMoveable())
+			end
+
+			self:SaveContainer()
+		end
+	end
+
+	function PLUGIN:OnPhysgunFreeze(weapon, phys, entity, client)
+		if (entity:GetClass() == "ix_container") then
+			entity:SetFixed(true)
+			self:SaveContainer()
+		end
+	end
+
 	function PLUGIN:LoadData()
 		local data = self:GetData()
 
@@ -190,10 +213,8 @@ if (SERVER) then
 					local entity = ents.Create("ix_container")
 					entity:SetPos(v[1])
 					entity:SetAngles(v[2])
-					entity:Spawn()
 					entity:SetModel(v[4])
-					entity:SetSolid(SOLID_VPHYSICS)
-					entity:PhysicsInit(SOLID_VPHYSICS)
+					entity:Spawn()
 
 					if (v[5]) then
 						entity.password = v[5]
@@ -220,9 +241,11 @@ if (SERVER) then
 					end)
 
 					local physObject = entity:GetPhysicsObject()
+					local bFixed = v[8]
 
 					if (IsValid(physObject)) then
-						physObject:EnableMotion()
+						physObject:EnableMotion(!bFixed)
+						entity:SetFixed(bFixed)
 					end
 				end
 			end

@@ -91,6 +91,7 @@ ix.util.Include("sh_definitions.lua")
 
 if (SERVER) then
 	util.AddNetworkString("ixContainerPassword")
+	util.AddNetworkString("ixContainerViewOnly")
 
 	function PLUGIN:PlayerSpawnedProp(client, model, entity)
 		model = tostring(model):lower()
@@ -299,6 +300,20 @@ else
 			end
 		)
 	end)
+
+	net.Receive("ixContainerViewOnly", function()
+		if (IsValid(ix.gui.openedStorage)) then
+			ix.gui.openedStorage.storageInventory:ViewOnly()
+
+			if (IsValid(ix.gui.openedStorage.storageMoney)) then
+				ix.gui.openedStorage.storageMoney.transferButton:SetVisible(false)
+			end
+
+			if (IsValid(ix.gui.openedStorage.localMoney)) then
+				ix.gui.openedStorage.localMoney.transferButton:SetVisible(false)
+			end
+		end
+	end)
 end
 
 function PLUGIN:InitializedPlugins()
@@ -309,6 +324,16 @@ function PLUGIN:InitializedPlugins()
 			ErrorNoHalt("[Helix] Container for '"..k.."' is missing all inventory information!\n")
 			ix.container.stored[k] = nil
 		end
+	end
+end
+
+function PLUGIN:CanTransferItem(itemDots, oldInv, newInv)
+	if (oldInv and oldInv.storageInfo and oldInv.storageInfo.data.bReadOnly) then
+		return false
+	end
+
+	if (newInv and newInv.storageInfo and newInv.storageInfo.data.bReadOnly) then
+		return false
 	end
 end
 
@@ -408,5 +433,49 @@ properties.Add("container_setname", {
 		local inventory = entity:GetInventory()
 
 		ix.log.Add(client, "containerName", name, inventory:GetID(), name:len() != 0)
+	end
+})
+
+properties.Add("container_view", {
+	MenuLabel = "View",
+	Order = 400,
+	MenuIcon = "icon16/eye.png",
+
+	Filter = function(self, entity, client)
+		if (entity:GetClass() != "ix_container") then return false end
+		if (!client:IsAdmin()) then return false end
+
+		return true
+	end,
+
+	Action = function(self, entity)
+		self:MsgStart()
+			net.WriteEntity(entity)
+		self:MsgEnd()
+	end,
+
+	Receive = function(self, length, client)
+		local entity = net.ReadEntity()
+
+		if (!IsValid(entity)) then return end
+		if (!self:Filter(entity, client)) then return end
+
+		local inventory = entity:GetInventory()
+
+		if (inventory) then
+			local bLocked = entity:GetLocked()
+
+			ix.storage.Open(client, inventory, {
+				name = entity:GetDisplayName(),
+				entity = entity,
+				searchTime = 0,
+				data = {bReadOnly = bLocked}
+			})
+
+			if (bLocked) then
+				net.Start("ixContainerViewOnly")
+				net.Send(client)
+			end
+		end
 	end
 })

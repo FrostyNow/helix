@@ -35,6 +35,17 @@ VENDOR_SELLONLY = 2
 -- Only buy the item from the player.
 VENDOR_BUYONLY = 3
 
+-- Only allow certain properties to be used on the vendor to prevent accidental removal or modification.
+function PLUGIN:CanProperty(client, property, entity)
+	local class = IsValid(entity) and entity:GetClass()
+
+	if (class == "ix_vendor" or class == "ix_vendor_new") then
+		if (property == "remover" or property == "ignite" or property == "extinguish" or property == "drive" or property == "disintegrate") then
+			return false
+		end
+	end
+end
+
 if (SERVER) then
 	util.AddNetworkString("ixVendorOpen")
 	util.AddNetworkString("ixVendorClose")
@@ -707,5 +718,82 @@ properties.Add("vendor_edit", {
 			net.WriteTable(entity.factions)
 			net.WriteTable(entity.classes)
 		net.Send(client)
+	end
+})
+
+ix.command.Add("CopyVendor", {
+	description = "@cmdCopyVendor",
+	adminOnly = true,
+	privilege = "Helix - Manage Vendors",
+	OnRun = function(self, client)
+		local trace = client:GetEyeTraceNoCursor()
+		local entity = trace.Entity
+
+		if (!IsValid(entity) or !entity.isVendor) then return end
+
+		local bodygroups = {}
+
+		for _, v in ipairs(entity:GetBodyGroups() or {}) do
+			bodygroups[v.id] = entity:GetBodygroup(v.id)
+		end
+
+		client.ixVendorCopyData = {
+			name = entity:GetDisplayName(),
+			description = entity:GetDescription(),
+			model = entity:GetModel(),
+			skin = entity:GetSkin(),
+			bodygroups = bodygroups,
+			bubble = entity:GetNoBubble(),
+			items = table.Copy(entity.items or {}),
+			factions = table.Copy(entity.factions or {}),
+			classes = table.Copy(entity.classes or {}),
+			money = entity.money,
+			scale = entity.scale or 0.5
+		}
+
+		return client:NotifyLocalized("vendorCopySuccess")
+	end
+})
+
+ix.command.Add("PasteVendor", {
+	description = "@cmdPasteVendor",
+	privilege = "Helix - Manage Vendors",
+	OnRun = function(self, client)
+		local data = client.ixVendorCopyData
+
+		if (!data) then return end
+
+		local trace = client:GetEyeTraceNoCursor()
+		local entity = trace.Entity
+
+		if (!IsValid(entity) or !entity.isVendor) then return end
+
+		entity:SetModel(data.model)
+		entity:SetSkin(data.skin or 0)
+		entity:SetNoBubble(data.bubble)
+		entity:SetDisplayName(data.name)
+		entity:SetDescription(data.description)
+
+		for id, bodygroup in pairs(data.bodygroups or {}) do
+			entity:SetBodygroup(id, bodygroup)
+		end
+
+		entity.items = table.Copy(data.items)
+		entity.factions = table.Copy(data.factions)
+		entity.classes = table.Copy(data.classes)
+		entity.money = data.money
+		entity.scale = data.scale
+
+		if (entity.InitPhysObj) then
+			entity:InitPhysObj()
+		end
+
+		if (entity.SetAnim) then
+			entity:SetAnim()
+		end
+
+		PLUGIN:SaveData()
+
+		return client:NotifyLocalized("vendorPasteSuccess")
 	end
 })

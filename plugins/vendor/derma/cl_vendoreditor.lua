@@ -4,7 +4,7 @@ local PANEL = {}
 function PANEL:Init()
 	local entity = ix.gui.vendor.entity
 
-	self:SetSize(320, 480)
+	self:SetSize(450, 600)
 	self:MoveLeftOf(ix.gui.vendor, 8)
 	self:MakePopup()
 	self:CenterVertical()
@@ -126,11 +126,11 @@ function PANEL:Init()
 		ix.gui.editorFaction:Setup()
 	end
 
-	self.searchBar = self:Add("DTextEntry")
+	self.searchBar = self:Add("ixIconTextEntry")
 	self.searchBar:Dock(TOP)
 	self.searchBar:DockMargin(0, 4, 0, 0)
 	self.searchBar:SetUpdateOnType(true)
-	self.searchBar:SetPlaceholderText("Search...")
+	self.searchBar:SetPlaceholderText(L"search" .. "...")
 	self.searchBar.OnValueChange = function(this, value)
 		self:ReloadItemList(value)
 	end

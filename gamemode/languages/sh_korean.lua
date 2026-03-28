@@ -492,12 +492,6 @@ LANGUAGE = {
 	cmdEvent = "서버 전역에서 일어나는 일을 묘사합니다.",
 	cmdOOC = "서버 전역에서 들을 수 있는 OOC 채팅입니다.",
 	cmdLOOC = "캐릭터 근처에 있는 사람들만 들을 수 있는 OOC 채팅입니다.",
-
-	Instructions = "설명",
-	Hands = "손",
-	["Primary Fire: Throw/Punch\nSecondary Fire: Knock/Pickup\nSecondary Fire + Mouse: Rotate Object\nReload: Drop"] = "왼쪽 클릭: 던지기/주먹질하기\n오른쪽 클릭: 노크하기/집어들기\n오른쪽 클릭 + 마우스: 물체 회전\n재장전 버튼: 내려놓기",
-	Keys = "열쇠",
-	["Primary Fire: Lock\nSecondary Fire: Unlock"] = "왼쪽 클릭: 잠그기\n오른쪽 클릭: 잠금 해제하기",
 	
 	gender = "성별",
 	gender_male = "남성",

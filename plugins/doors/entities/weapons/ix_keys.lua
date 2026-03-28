@@ -2,9 +2,9 @@
 AddCSLuaFile()
 
 if (CLIENT) then
-	SWEP.PrintName = L("Keys", LocalPlayer())
-	SWEP.Instructions = L("Primary Fire: Lock\nSecondary Fire: Unlock", LocalPlayer())
-	SWEP.Purpose = L("Hitting things and knocking on doors.", LocalPlayer())
+	SWEP.PrintName = "Keys"
+	SWEP.Instructions = "Primary Fire: Lock\nSecondary Fire: Unlock"
+	SWEP.Purpose = "Hitting things and knocking on doors."
 	SWEP.Slot = 0
 	SWEP.SlotPos = 2
 	SWEP.DrawAmmo = false

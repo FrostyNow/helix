@@ -17,7 +17,10 @@ if (SERVER) then
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)
 		self:SetUseType(SIMPLE_USE)
+
 		self.receivers = {}
+		self.Sessions = {}
+		self.PasswordAttempts = {}
 
 		local definition = ix.container.stored[self:GetModel():lower()]
 
@@ -96,6 +99,7 @@ if (SERVER) then
 			})
 
 			if (self:GetLocked()) then
+				self.Sessions = self.Sessions or {}
 				self.Sessions[activator:GetCharacter():GetID()] = true
 			end
 
@@ -111,6 +115,8 @@ if (SERVER) then
 
 			if (character) then
 				local definition = ix.container.stored[self:GetModel():lower()]
+
+				self.Sessions = self.Sessions or {}
 
 				if (self:GetLocked() and !self.Sessions[character:GetID()]) then
 					self:EmitSound(definition.locksound or "doors/default_locked.wav")

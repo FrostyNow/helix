@@ -528,6 +528,8 @@ do
 	-- @treturn number Index of the class this character is in
 	-- @function GetClass
 	ix.char.RegisterVar("class", {
+		field = "class",
+		fieldType = ix.type.number,
 		bNoDisplay = true,
 	})
 

@@ -64,6 +64,15 @@ function GM:PlayerInitialSpawn(client)
 				local character = ix.char.loaded[v]
 				character:Sync(client)
 				
+				-- Sync preview appearance data for character selection menu
+				local outfitPlugin = ix.plugin.Get("better_outfits") or ix.plugin.Get("better_armor")
+				if (outfitPlugin) then
+					local appearance = outfitPlugin:GetCharacterPreviewAppearance(character)
+					if (appearance) then
+						character:SetData("previewAppearance", appearance, false, client)
+					end
+				end
+
 				-- Sync bodygroup and skin data to client for character selection menu
 				local groups = character:GetData("groups")
 				if (groups) then

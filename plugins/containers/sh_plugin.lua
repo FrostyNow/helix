@@ -259,6 +259,12 @@ if (SERVER) then
 
 		local entity = net.ReadEntity()
 		local steamID = client:SteamID()
+
+		if (!IsValid(entity) or entity:GetClass() != "ix_container") then
+			return
+		end
+
+		entity.PasswordAttempts = entity.PasswordAttempts or {}
 		local attempts = entity.PasswordAttempts[steamID]
 
 		if (attempts and attempts >= 10) then

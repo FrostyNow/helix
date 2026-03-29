@@ -111,6 +111,14 @@ do
 		end
 
 		function playerMeta:SelectWeapon(className)
+			if (isentity(className) and IsValid(className)) then
+				className = className:GetClass()
+			end
+
+			if (!isstring(className)) then
+				return
+			end
+
 			net.Start("PlayerSelectWeapon")
 				net.WriteEntity(self)
 				net.WriteString(className)

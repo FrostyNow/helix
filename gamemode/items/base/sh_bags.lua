@@ -65,6 +65,14 @@ ITEM.functions.combine = {
 			local inventory = ix.item.inventories[index]
 
 			if (inventory) then
+				if (data and data[1]) then
+					local targetItem = ix.item.instances[data[1]]
+
+					if (targetItem and hook.Run("CanTransferItem", targetItem, ix.item.inventories[targetItem.invID], inventory) == false) then
+						return false
+					end
+				end
+
 				return true
 			end
 		end
@@ -244,3 +252,52 @@ end
 function ITEM:OnRegistered()
 	ix.inventory.Register(self.uniqueID, self.invWidth, self.invHeight, true)
 end
+
+hook.Add("CanTransferItem", "ixBagsRestriction", function(item, oldInv, newInv)
+	if (newInv and newInv.vars and newInv.vars.isBag) then
+		local bagItem = ix.item.list[newInv.vars.isBag]
+
+		if (bagItem) then
+			if (bagItem.allowCategories or bagItem.allowItems or bagItem.allowBases) then
+				local bMatched = false
+
+				if (bagItem.allowCategories) then
+					local categories = istable(bagItem.allowCategories) and bagItem.allowCategories or {bagItem.allowCategories}
+
+					if (table.HasValue(categories, item.category or "Others")) then
+						bMatched = true
+					end
+				end
+
+				if (!bMatched and bagItem.allowItems) then
+					local items = istable(bagItem.allowItems) and bagItem.allowItems or {bagItem.allowItems}
+
+					if (table.HasValue(items, item.uniqueID)) then
+						bMatched = true
+					end
+				end
+
+				if (!bMatched and bagItem.allowBases) then
+					local bases = istable(bagItem.allowBases) and bagItem.allowBases or {bagItem.allowBases}
+
+					for _, v in ipairs(bases) do
+						if (item.base == v or item.uniqueID == v) then
+							bMatched = true
+							break
+						end
+					end
+				end
+
+				if (!bMatched) then
+					return false
+				end
+			end
+
+			if (bagItem.OnCheckItemRestriction) then
+				if (bagItem:OnCheckItemRestriction(item, oldInv, newInv) == false) then
+					return false
+				end
+			end
+		end
+	end
+end)

@@ -102,6 +102,18 @@ ITEM.functions.Equip = {
 	OnCanRun = function(item)
 		local client = item.player
 
+		if (IsValid(client)) then
+			local character = client:GetCharacter()
+
+			if (character) then
+				local faction = ix.faction.indices[character:GetFaction()]
+
+				if (faction and faction.excludedItemBases and table.HasValue(faction.excludedItemBases, item.base or "")) then
+					return false
+				end
+			end
+		end
+
 		return !IsValid(item.entity) and IsValid(client) and item:GetData("equip") != true and
 			hook.Run("CanPlayerEquipItem", client, item) != false
 	end
@@ -120,6 +132,16 @@ function ITEM:RemovePAC(client)
 end
 
 function ITEM:Equip(client, bNoSelect, bNoSound)
+	local character = client:GetCharacter()
+
+	if (character) then
+		local faction = ix.faction.indices[character:GetFaction()]
+
+		if (faction and faction.excludedItemBases and table.HasValue(faction.excludedItemBases, self.base or "")) then
+			return false
+		end
+	end
+
 	client.carryWeapons = client.carryWeapons or {}
 
 	for _, k in pairs(client:GetCharacter():GetInventory():GetItems()) do
@@ -293,6 +315,17 @@ function ITEM:OnLoadout()
 		end
 
 		client.carryWeapons = client.carryWeapons or {}
+
+		local character = client:GetCharacter()
+
+		if (character) then
+			local faction = ix.faction.indices[character:GetFaction()]
+
+			if (faction and faction.excludedItemBases and table.HasValue(faction.excludedItemBases, self.base or "")) then
+				self:SetData("equip", nil)
+				return
+			end
+		end
 
 		local weapon = client:Give(self.class, true)
 

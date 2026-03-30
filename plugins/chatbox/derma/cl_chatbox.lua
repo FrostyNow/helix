@@ -9,19 +9,20 @@ local maxChatEntries = 100
 -- called when a markup object should paint its text
 local function PaintMarkupOverride(text, font, x, y, color, alignX, alignY, alpha)
 	alpha = alpha or 255
+	local targetAlpha = ( (color.a or 255) * alpha ) / 255
 
 	if (ix.option.Get("chatOutline", false)) then
 		-- outlined background for even more visibility
-		draw.SimpleTextOutlined(text, font, x, y, ColorAlpha(color, alpha), alignX, alignY, 1, Color(0, 0, 0, alpha))
+		draw.SimpleTextOutlined(text, font, x, y, Color(color.r, color.g, color.b, targetAlpha), alignX, alignY, 1, Color(0, 0, 0, targetAlpha))
 	else
 		-- background for easier reading
 		surface.SetTextPos(x + 1, y + 1)
-		surface.SetTextColor(0, 0, 0, alpha)
+		surface.SetTextColor(0, 0, 0, targetAlpha)
 		surface.SetFont(font)
 		surface.DrawText(text)
 
 		surface.SetTextPos(x, y)
-		surface.SetTextColor(color.r, color.g, color.b, alpha)
+		surface.SetTextColor(color.r, color.g, color.b, targetAlpha)
 		surface.SetFont(font)
 		surface.DrawText(text)
 	end
@@ -330,13 +331,14 @@ function PANEL:AddLine(elements, bShouldScroll)
 				buffer[#buffer + 1] = string.format("<img=%s,%dx%d> ", texture, v:Width(), v:Height())
 			end
 		elseif (istable(v) and v.r and v.g and v.b) then
-			buffer[#buffer + 1] = string.format("<color=%d,%d,%d>", v.r, v.g, v.b)
+			buffer[#buffer + 1] = string.format("<color=%d,%d,%d,%d>", v.r, v.g, v.b, v.a or 255)
 		elseif (type(v) == "Player") then
 			local color = hook.Run("GetPlayerChatColor", v, CHAT_CLASS) or team.GetColor(v:Team())
 			local name = hook.Run("GetCharacterName", v, CHAT_CLASS and CHAT_CLASS.uniqueID) or v:GetName()
 
-			buffer[#buffer + 1] = string.format("<color=%d,%d,%d>%s", color.r, color.g, color.b,
+			buffer[#buffer + 1] = string.format("<color=%d,%d,%d,%d>%s", color.r, color.g, color.b, color.a or 255,
 				name:gsub("<", "&lt;"):gsub(">", "&gt;"))
+
 		else
 			buffer[#buffer + 1] = tostring(v):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub("%b**", function(value)
 				local inner = value:utf8sub(2, -2)

@@ -85,7 +85,7 @@ local function ExtractParams(p1,p2,p3)
 				local x = { "r", "g", "b", "a" }
 				n = 1
 				for k, v in string.gmatch(p2, "(%d+),?") do
-					rgba[ x[n] ] = k
+					rgba[ x[n] ] = tonumber(k)
 					n = n + 1
 				end
 			end
@@ -237,8 +237,8 @@ function MarkupObject:draw(xOffset, yOffset, halign, valign, alphaoverride)
 				elseif (valign == TEXT_ALIGN_BOTTOM) then	y = y - (self.totalHeight)
 				end
 
-				local alpha = blk.colour.a
-				if (alphaoverride) then alpha = alphaoverride end
+				local alpha = (blk.colour.a or 255)
+				if (alphaoverride) then alpha = (alpha * alphaoverride) / 255 end
 
 				surface.SetFont( blk.font )
 				surface.SetTextColor( blk.colour.r, blk.colour.g, blk.colour.b, alpha )

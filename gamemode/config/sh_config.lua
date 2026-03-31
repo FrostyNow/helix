@@ -45,9 +45,6 @@ ix.config.Add("chatAutoFormat", true, "Whether or not to automatically capitaliz
 	category = "chat"
 })
 
-ix.config.Add("chatTransparency", false, "@optdChatTransparency", nil, {
-	category = "chat"
-})
 ix.config.Add("chatRange", 280, "The maximum distance a person's IC chat message goes to.", nil, {
 	data = {min = 10, max = 5000, decimals = 1},
 	category = "chat"

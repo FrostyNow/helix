@@ -76,18 +76,37 @@ function PANEL:Init()
 			local panel
 
 			if (v.type == ix.type.string or v.type == ix.type.number) then
-				panel = vgui.Create("ixTextEntry")
-				panel:SetFont("ixMenuButtonFont")
-				panel:SetText(tostring(v.default))
+				local choices = v.data and (v.data.choices or (v.data.data and v.data.data.choices))
 
-				if (v.type == ix.type.number) then
-					panel.realGetValue = panel.GetValue
-					panel.GetValue = function(this)
-						return tonumber(this:realGetValue()) or v.default
+				if (choices) then
+					panel = vgui.Create("DComboBox")
+					panel:SetFont("ixMenuButtonFont")
+					panel:SetTextColor(color_white)
+
+					for _, choice in ipairs(choices) do
+						panel:AddChoice(choice)
 					end
-				end
-				panel.SetValue = function(this, val)
-					this:SetText(tostring(val))
+
+					panel:SetValue(v.default or (choices[1] and tostring(choices[1])) or "")
+
+					panel.SetValue = function(this, val)
+						this:SetText(tostring(val))
+					end
+				else
+					panel = vgui.Create("ixTextEntry")
+					panel:SetFont("ixMenuButtonFont")
+					panel:SetText(tostring(v.default))
+
+					if (v.type == ix.type.number) then
+						panel.realGetValue = panel.GetValue
+						panel.GetValue = function(this)
+							return tonumber(this:realGetValue()) or v.default
+						end
+					end
+
+					panel.SetValue = function(this, val)
+						this:SetText(tostring(val))
+					end
 				end
 			elseif (v.type == ix.type.bool) then
 				panel = vgui.Create("ixCheckBox")

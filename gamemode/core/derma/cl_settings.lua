@@ -356,6 +356,28 @@ function PANEL:GetValue()
 	return self.setting:GetValue()
 end
 
+function PANEL:Populate(key, info)
+	local choices = info.choices or (info.data and info.data.choices)
+
+	if (choices) then
+		if (IsValid(self.setting)) then
+			self.setting:Remove()
+		end
+
+		self.setting = self:Add("DComboBox")
+		self.setting:Dock(RIGHT)
+		self.setting:SetFont("ixMenuButtonFont")
+		self.setting:SetTextColor(color_white)
+		self.setting.OnSelect = function(panel, index, value)
+			self:OnValueChanged(value)
+		end
+
+		for _, v in ipairs(choices) do
+			self.setting:AddChoice(v)
+		end
+	end
+end
+
 function PANEL:PerformLayout(width, height)
 	self.setting:SetWide(width * 0.5)
 end
@@ -667,6 +689,11 @@ function PANEL:FilterRows(query, bInstant)
 					category:SizeToContents()
 				end
 			else
+				if (row.ixHeight == targetHeight) then
+					row:SetVisible(targetHeight > 0)
+					continue
+				end
+
 				row:SetVisible(true)
 				row:CreateAnimation(0.5, {
 					index = 21,
@@ -674,15 +701,12 @@ function PANEL:FilterRows(query, bInstant)
 					easing = "outQuint",
 
 					Think = function(animation, panel)
-						panel:SetTall(bFound and math.min(panel.ixHeight + 2, panel.ixRealHeight) or math.max(panel.ixHeight - 2, 0))
+						panel:SetTall(panel.ixHeight)
 					end,
 
 					OnComplete = function(animation, panel)
-						panel:SetVisible(bFound and targetHeight > 0)
+						panel:SetVisible(targetHeight > 0)
 
-						-- need this so categories are sized properly when animations are disabled - there is no guaranteed order
-						-- that animations will think so we SizeToContents here. putting it here will result in redundant calls but
-						-- I guess we have the performance to spare
 						if (ix.option.Get("disableAnimations", false)) then
 							category:SizeToContents()
 						end

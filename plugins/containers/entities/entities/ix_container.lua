@@ -85,12 +85,12 @@ if (SERVER) then
 				searchTime = ix.config.Get("containerOpenTime", 0.7),
 				data = {money = self:GetMoney()},
 				OnPlayerOpen = function()
-					if (definition.OnOpen) then
+					if (definition and definition.OnOpen) then
 					    definition.OnOpen(self, activator)
 					end
 				end,
 				OnPlayerClose = function()
-					if (definition.OnClose) then
+					if (definition and definition.OnClose) then
 						definition.OnClose(self, activator)
 					end
 
@@ -119,7 +119,7 @@ if (SERVER) then
 				self.Sessions = self.Sessions or {}
 
 				if (self:GetLocked() and !self.Sessions[character:GetID()]) then
-					self:EmitSound(definition.locksound or "doors/default_locked.wav")
+					self:EmitSound(definition and definition.locksound or "doors/default_locked.wav")
 
 					if (!self.keypad) then
 						net.Start("ixContainerPassword")
@@ -176,9 +176,11 @@ else
 			end
 		end
 
-		local description = tooltip:AddRow("description")
-		description:SetText(L(definition.description))
-		description:SizeToContents()
+		if (definition) then
+			local description = tooltip:AddRow("description")
+			description:SetText(L(definition.description))
+			description:SizeToContents()
+		end
 	end
 end
 

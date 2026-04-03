@@ -454,7 +454,7 @@ properties.Add("container_setname", {
 		else
 			local definition = ix.container.stored[entity:GetModel():lower()]
 
-			entity:SetDisplayName(definition.name)
+			entity:SetDisplayName(definition and definition.name or "Container")
 
 			client:NotifyLocalized("containerNameRemove")
 		end

@@ -17,8 +17,10 @@ if (CLIENT) then
 	function PLUGIN:CalcView(client, origin, angles, fov)
 		local scenes = self.scenes
 
-		if (IsValid(ix.gui.characterMenu) and !IsValid(ix.gui.menu) and !ix.gui.characterMenu:IsClosing() and
-			!table.IsEmpty(scenes)) then
+		if (IsValid(ix.gui.characterMenu) and !IsValid(ix.gui.menu) and !ix.gui.characterMenu:IsClosing()) then
+			if (table.IsEmpty(scenes)) then
+				return
+			end
 			local key = self.index
 			local value = scenes[self.index]
 
@@ -144,6 +146,7 @@ if (CLIENT) then
 		end
 
 		-- Set the list of texts to the ones provided by the server.
+		PLUGIN.ordered = {}
 		PLUGIN.scenes = util.JSONToTable(uncompressed)
 
 		for k, v in pairs(PLUGIN.scenes) do

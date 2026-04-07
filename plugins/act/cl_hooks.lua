@@ -19,16 +19,6 @@ local function GetHeadBone(client)
 	return head
 end
 
-function PLUGIN:PlayerBindPress(client, bind, bPressed)
-	if (!client:GetNetVar("actEnterAngle")) then
-		return
-	end
-
-	if (bind:find("+jump") and bPressed) then
-		ix.command.Send("ExitAct")
-		return true
-	end
-end
 
 function PLUGIN:ShouldDrawLocalPlayer(client)
 	if (client:GetNetVar("actEnterAngle") and self.cameraFraction > 0.25) then
@@ -142,3 +132,184 @@ net.Receive("ixActLeave", function()
 		cameraFraction = 0
 	}, "outQuint")
 end)
+
+local ghostEntity
+local placementAct
+local placementVariant
+local placementAngle = 0
+
+local function RemoveGhost()
+	if (IsValid(ghostEntity)) then
+		ghostEntity:Remove()
+		ghostEntity = nil
+	end
+
+	placementAct = nil
+	placementVariant = nil
+	placementAngle = 0
+end
+
+net.Receive("ixActPlacementStart", function()
+	placementAct = net.ReadString()
+	placementVariant = net.ReadUInt(8)
+
+	local client = LocalPlayer()
+	local model = client:GetModel()
+
+	if (IsValid(ghostEntity)) then
+		ghostEntity:Remove()
+	end
+
+	ghostEntity = ClientsideModel(model)
+	ghostEntity:SetNoDraw(true)
+	ghostEntity:SetRenderMode(RENDERMODE_TRANSCOLOR)
+
+	placementAngle = client:GetAngles().y
+
+	-- Find the sequence to display
+	local classes = ix.act.stored[placementAct]
+	if (classes) then
+		local modelClass = ix.anim.GetModelClass(model)
+		local data = classes[modelClass]
+
+		if (data) then
+			local sequence = data.sequence[placementVariant]
+			if (istable(sequence)) then
+				sequence = sequence[1]
+			end
+
+			local sequenceID = ghostEntity:LookupSequence(sequence)
+			if (sequenceID != -1) then
+				ghostEntity:SetSequence(sequenceID)
+				ghostEntity:SetCycle(0)
+			end
+		end
+	end
+end)
+
+local placementValid = false
+
+function PLUGIN:PlayerBindPress(client, bind, bPressed)
+	if (client:GetNetVar("actEnterAngle")) then
+		if (bind:find("+jump") and bPressed) then
+			ix.command.Send("ExitAct")
+			return true
+		end
+	end
+
+	if (IsValid(ghostEntity)) then
+		if (bPressed) then
+			if (bind:find("+attack2")) then
+				RemoveGhost()
+				return true
+			elseif (bind:find("+attack")) then
+				if (!placementValid) then
+					client:NotifyLocalized("invalidPlacement")
+					return true
+				end
+
+				local trace = util.TraceHull({
+					start = client:EyePos(),
+					endpos = client:EyePos() + client:GetForward() * 100,
+					filter = {client, ghostEntity},
+					mins = Vector(-16, -16, 0),
+					maxs = Vector(16, 16, 72)
+				})
+
+				local angles = Angle(0, placementAngle, 0)
+
+				net.Start("ixActRequest")
+					net.WriteString(placementAct)
+					net.WriteUInt(placementVariant, 8)
+					net.WriteVector(trace.HitPos)
+					net.WriteAngle(angles)
+				net.SendToServer()
+
+				RemoveGhost()
+				return true
+			elseif (bind:find("invprev")) then
+				placementAngle = placementAngle + 5
+				return true
+			elseif (bind:find("invnext")) then
+				placementAngle = placementAngle - 5
+				return true
+			end
+		end
+
+		if (bind:find("+attack") or bind:find("+attack2")) then
+			return true
+		end
+	end
+end
+
+function PLUGIN:Think()
+	if (IsValid(ghostEntity)) then
+		local client = LocalPlayer()
+		local trace = util.TraceHull({
+			start = client:EyePos(),
+			endpos = client:EyePos() + client:GetForward() * 100,
+			filter = {client, ghostEntity},
+			mins = Vector(-16, -16, 0),
+			maxs = Vector(16, 16, 72)
+		})
+
+		ghostEntity:SetPos(trace.HitPos)
+		ghostEntity:SetAngles(Angle(0, placementAngle, 0))
+
+		-- Collision check: make sure the ghost isn't clipping through props or the world
+		local checkTrace = util.TraceHull({
+			start = trace.HitPos + Vector(0, 0, 1),
+			endpos = trace.HitPos + Vector(0, 0, 1),
+			mins = Vector(-15, -15, 2), -- slightly smaller to avoid false positives with ground
+			maxs = Vector(15, 15, 70),
+			filter = {client, ghostEntity}
+		})
+
+		-- Path validation: Cannot phase through walls (Client preview)
+		local pathTrace = util.TraceHull({
+			start = client:GetPos() + Vector(0, 0, 10),
+			endpos = trace.HitPos + Vector(0, 0, 10),
+			mins = Vector(-12, -12, 0),
+			maxs = Vector(12, 12, 60),
+			filter = {client, ghostEntity}
+		})
+
+		placementValid = !checkTrace.Hit and !pathTrace.Hit
+	end
+end
+
+function PLUGIN:PostDrawTranslucentRenderables()
+	if (IsValid(ghostEntity)) then
+		if (placementValid) then
+			render.SetColorModulation(0.5, 1, 0.5)
+		else
+			render.SetColorModulation(1, 0.5, 0.5)
+		end
+
+		render.SetBlend(0.6)
+			ghostEntity:DrawModel()
+		render.SetBlend(1)
+		render.SetColorModulation(1, 1, 1)
+	end
+end
+
+function PLUGIN:HUDPaint()
+	if (IsValid(ghostEntity)) then
+		local text = "LMB: Confirm | RMB: Cancel | Scroll: Rotate"
+		surface.SetFont("ixMediumFont")
+		local w, h = surface.GetTextSize(text)
+		
+		surface.SetDrawColor(0, 0, 0, 150)
+		surface.DrawRect(ScrW() / 2 - w / 2 - 10, ScrH() * 0.8, w + 20, h + 10)
+		
+		draw.SimpleText(text, "ixMediumFont", ScrW() / 2, ScrH() * 0.8 + 5, color_white, TEXT_ALIGN_CENTER)
+	end
+end
+
+function PLUGIN:OnCharacterMenuClosed()
+	RemoveGhost()
+end
+
+function PLUGIN:OnCharacterLoad()
+	RemoveGhost()
+end

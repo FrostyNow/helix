@@ -9,7 +9,7 @@ local PLUGIN = PLUGIN
 
 PLUGIN.name = "Player Acts"
 PLUGIN.description = "Adds animations that can be performed by certain models."
-PLUGIN.author = "`impulse"
+PLUGIN.author = "`impulse | Modified by Frosty"
 
 ix.act = ix.act or {}
 ix.act.stored = ix.act.stored or {}
@@ -141,80 +141,10 @@ function PLUGIN:PostSetupActs()
 				return error
 			end
 
-			local data = classes[modelClass]
-			local mainSequence = data.sequence[variant]
-			local mainDuration
-
-			-- check if the main sequence has any extra info
-			if (istable(mainSequence)) then
-				-- any validity checks to perform (i.e facing a wall)
-				if (mainSequence.check) then
-					local result = mainSequence.check(client)
-
-					if (result) then
-						return result
-					end
-				end
-
-				-- position offset
-				if (mainSequence.offset) then
-					client.ixOldPosition = client:GetPos()
-					client:SetPos(client:GetPos() + mainSequence.offset(client))
-				end
-
-				mainDuration = mainSequence.duration
-				mainSequence = mainSequence[1]
-			end
-
-			local startSequence = data.start and data.start[variant] or ""
-			local startDuration
-
-			if (istable(startSequence)) then
-				startDuration = startSequence.duration
-				startSequence = startSequence[1]
-			end
-
-			client:SetNetVar("actEnterAngle", client:GetAngles())
-
-			client:ForceSequence(startSequence, function()
-				-- we've finished the start sequence
-				client.ixUntimedSequence = data.untimed -- client can exit after the start sequence finishes playing
-
-				local duration = client:ForceSequence(mainSequence, function()
-					-- we've stopped playing the main sequence (either duration expired or user cancelled the act)
-					if (data.finish) then
-						local finishSequence = data.finish[variant]
-						local finishDuration
-
-						if (istable(finishSequence)) then
-							finishDuration = finishSequence.duration
-							finishSequence = finishSequence[1]
-						end
-
-						client:ForceSequence(finishSequence, function()
-							-- client has finished the end sequence and is no longer playing any animations
-							self:ExitAct(client)
-						end, finishDuration)
-					else
-						-- there's no end sequence so we can exit right away
-						self:ExitAct(client)
-					end
-				end, data.untimed and 0 or (mainDuration or nil))
-
-				if (!duration) then
-					-- the model doesn't support this variant
-					self:ExitAct(client)
-					client:NotifyLocalized("modelNoSeq")
-
-					return
-				end
-			end, startDuration, nil)
-
-			net.Start("ixActEnter")
-				net.WriteBool(data.idle or false)
+			net.Start("ixActPlacementStart")
+				net.WriteString(act)
+				net.WriteUInt(variant, 8)
 			net.Send(client)
-
-			client.ixNextAct = CurTime() + 4
 		end
 
 		ix.command.Add("Act" .. act, COMMAND)

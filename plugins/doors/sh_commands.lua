@@ -626,3 +626,59 @@ ix.command.Add("DoorSetOwner", {
 		end
 	end
 })
+
+ix.command.Add("DoorReset", {
+	description = "@cmdDoorReset",
+	privilege = "Manage Doors",
+	adminOnly = true,
+	OnRun = function(self, client, arguments)
+		local entity = client:GetEyeTrace().Entity
+
+		if (IsValid(entity) and entity:IsDoor()) then
+			-- If it's a child, remove it from the parent first
+			if (IsValid(entity.ixParent) and entity.ixParent.ixChildren) then
+				entity.ixParent.ixChildren[entity:MapCreationID()] = nil
+				entity.ixParent = nil
+			end
+
+			-- If it's a parent, remove all children's parent reference
+			if (entity.ixChildren) then
+				for k, _ in pairs(entity.ixChildren) do
+					local child = ents.GetMapCreatedEntity(k)
+
+					if (IsValid(child)) then
+						child.ixParent = nil
+					end
+				end
+				entity.ixChildren = nil
+			end
+
+			-- Clear access data (ownership, etc.)
+			entity:RemoveDoorAccessData()
+
+			-- Clear all associated netvars (based on variables table in sv_plugin.lua)
+			local variables = {
+				"disabled", "name", "price", "ownable", "faction", "class", "visible", "offlineOwner", "title"
+			}
+
+			for _, v in ipairs(variables) do
+				entity:SetNetVar(v, nil)
+			end
+
+			-- Clear internal IDs
+			entity.ixFactionID = nil
+			entity.ixClassID = nil
+
+			-- Reset physical state
+			entity:Fire("Unlock")
+			entity:Fire("Open")
+
+			-- Save the changes
+			PLUGIN:SaveDoorData()
+
+			return "@dReset"
+		else
+			return "@dNotValid"
+		end
+	end
+})

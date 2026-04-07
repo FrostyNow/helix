@@ -29,17 +29,27 @@ ITEM.functions.use = {
 	tip = "useTip",
 	icon = "icon16/add.png",
 	OnRun = function(item)
+		local client = item.player
 		local rounds = item:GetData("rounds", item.ammoAmount)
-		local amountToGive = rounds
+		local currentAmmo = client:GetAmmoCount(item.ammo)
+		local maxAmmo = game.GetAmmoMax(item.ammo)
 
-		if (item.ammoClip) then
-			amountToGive = math.min(rounds, item.ammoClip)
+		if (maxAmmo ~= -1 and currentAmmo >= maxAmmo) then
+			client:NotifyLocalized("maxAmmoReached")
+			return false
 		end
 
-		item.player:GiveAmmo(amountToGive, item.ammo)
-		item.player:EmitSound(item.useSound, 110)
+		local amountToGive = item.ammoClip and math.min(rounds, item.ammoClip) or rounds
+
+		if (maxAmmo ~= -1 and currentAmmo + amountToGive > maxAmmo) then
+			amountToGive = maxAmmo - currentAmmo
+		end
+
+		client:GiveAmmo(amountToGive, item.ammo)
+		client:EmitSound(item.useSound, 110)
 
 		local remaining = rounds - amountToGive
+
 		if (remaining > 0) then
 			item:SetData("rounds", remaining)
 			return false
@@ -47,17 +57,38 @@ ITEM.functions.use = {
 
 		return true
 	end,
-}
+},
 
 ITEM.functions.useall = {
 	name = "Load All",
 	tip = "useTip",
 	icon = "icon16/accept.png",
 	OnRun = function(item)
+		local client = item.player
 		local rounds = item:GetData("rounds", item.ammoAmount)
+		local currentAmmo = client:GetAmmoCount(item.ammo)
+		local maxAmmo = game.GetAmmoMax(item.ammo)
 
-		item.player:GiveAmmo(rounds, item.ammo)
-		item.player:EmitSound(item.useSound, 110)
+		if (maxAmmo ~= -1 and currentAmmo >= maxAmmo) then
+			client:NotifyLocalized("maxAmmoReached")
+			return false
+		end
+
+		local amountToGive = rounds
+
+		if (maxAmmo ~= -1 and currentAmmo + amountToGive > maxAmmo) then
+			amountToGive = maxAmmo - currentAmmo
+		end
+
+		client:GiveAmmo(amountToGive, item.ammo)
+		client:EmitSound(item.useSound, 110)
+
+		local remaining = rounds - amountToGive
+
+		if (remaining > 0) then
+			item:SetData("rounds", remaining)
+			return false
+		end
 
 		return true
 	end,

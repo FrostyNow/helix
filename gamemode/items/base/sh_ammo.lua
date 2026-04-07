@@ -57,7 +57,7 @@ ITEM.functions.use = {
 
 		return true
 	end,
-},
+}
 
 ITEM.functions.useall = {
 	name = "Load All",

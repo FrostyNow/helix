@@ -11,11 +11,11 @@ PLUGIN.name = "Player Acts"
 PLUGIN.description = "Adds animations that can be performed by certain models."
 PLUGIN.author = "`impulse | Modified by Frosty"
 
-ix.lang.Add("en", {
+ix.lang.AddTable("english", {
 	actPlacementHint = "LMB: Confirm | RMB: Cancel | Scroll: Rotate"
 })
 
-ix.lang.Add("ko", {
+ix.lang.AddTable("korean", {
 	actPlacementHint = "좌클릭: 확정 | 우클릭: 취소 | 휠: 회전"
 })
 

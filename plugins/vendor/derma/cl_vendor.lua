@@ -109,8 +109,7 @@ function PANEL:addItem(uniqueID, listID)
 		end
 	end
 
-	if ((!listID or listID == "buying") and !IsValid(self.buyingList[uniqueID])
-	and LocalPlayer():GetCharacter():GetInventory():HasItem(uniqueID)) then
+	if ((!listID or listID == "buying") and !IsValid(self.buyingList[uniqueID])) then
 		if (data and data[VENDOR_MODE] and data[VENDOR_MODE] != VENDOR_SELLONLY) then
 			local item = self.buyingItems:Add("ixVendorItem")
 			item:Setup(uniqueID)
@@ -150,8 +149,8 @@ function PANEL:Setup(entity)
 		self:addItem(k, "selling")
 	end
 
-	for _, v in SortedPairs(LocalPlayer():GetCharacter():GetInventory():GetItems()) do
-		self:addItem(v.uniqueID, "buying")
+	for k, _ in SortedPairs(entity.items) do
+		self:addItem(k, "buying")
 	end
 end
 
@@ -218,6 +217,10 @@ function PANEL:Init()
 	self.click.Paint = function() end
 	self.click.DoClick = function(this)
 		if (self.isLocal) then
+			if (!self.bHasItem) then
+				return
+			end
+
 			ix.gui.vendor.activeBuy = self
 		else
 			ix.gui.vendor.activeSell = self
@@ -225,6 +228,8 @@ function PANEL:Init()
 
 		ix.gui.vendor:OnItemSelected(self)
 	end
+
+	self.bHasItem = true
 end
 
 function PANEL:SetCallback(callback)
@@ -242,6 +247,16 @@ function PANEL:Setup(uniqueID)
 		self.icon:SetModel(item:GetModel(), item:GetSkin())
 		self.name:SetText(item:GetName())
 		self.itemName = item:GetName()
+
+		if (self.isLocal) then
+			local count = LocalPlayer():GetCharacter():GetInventory():GetItemCount(self.item)
+			self.bHasItem = count > 0
+			self:SetZPos(self.bHasItem and -1 or 1)
+
+			if (IsValid(self.name)) then
+				self.name:SetTextColor(self.bHasItem and color_white or Color(150, 150, 150))
+			end
+		end
 
 		self.click:SetHelixTooltip(function(tooltip)
 			ix.hud.PopulateItemTooltip(tooltip, item)
@@ -264,10 +279,24 @@ function PANEL:Think()
 
 		if (entity and self.isLocal) then
 			local count = LocalPlayer():GetCharacter():GetInventory():GetItemCount(self.item)
+			local bHasItem = count > 0
 
-			if (count == 0) then
-				self:Remove()
+			if (self.bHasItem != bHasItem) then
+				self.bHasItem = bHasItem
+				self:SetZPos(self.bHasItem and -1 or 1)
+
+				if (IsValid(self.name)) then
+					self.name:SetTextColor(self.bHasItem and color_white or Color(150, 150, 150))
+				end
+
+				local parent = self:GetParent()
+
+				if (IsValid(parent)) then
+					parent:InvalidateLayout()
+				end
 			end
+		else
+			self.bHasItem = true
 		end
 
 		self.nextUpdate = CurTime() + 0.1
@@ -275,7 +304,9 @@ function PANEL:Think()
 end
 
 function PANEL:Paint(w, h)
-	if (ix.gui.vendor.activeBuy == self or ix.gui.vendor.activeSell == self) then
+	local bSelected = (ix.gui.vendor.activeBuy == self or ix.gui.vendor.activeSell == self)
+
+	if (bSelected) then
 		surface.SetDrawColor(ix.config.Get("color"))
 	else
 		surface.SetDrawColor(0, 0, 0, 100)

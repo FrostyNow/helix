@@ -1,8 +1,8 @@
 
-local function FacingWall(client)
+local function FacingWall(client, pos, ang)
 	local data = {}
-	data.start = client:EyePos()
-	data.endpos = data.start + client:GetForward() * 20
+	data.start = pos and (pos + Vector(0, 0, 48)) or client:EyePos()
+	data.endpos = data.start + (ang and ang:Forward() or client:GetForward()) * 25
 	data.filter = client
 
 	if (!util.TraceLine(data).Hit) then
@@ -10,10 +10,10 @@ local function FacingWall(client)
 	end
 end
 
-local function FacingWallBack(client)
+local function FacingWallBack(client, pos, ang)
 	local data = {}
-	data.start = client:LocalToWorld(client:OBBCenter())
-	data.endpos = data.start - client:GetForward() * 20
+	data.start = pos and (pos + Vector(0, 0, 48)) or client:LocalToWorld(client:OBBCenter())
+	data.endpos = data.start - (ang and ang:Forward() or client:GetForward()) * 25
 	data.filter = client
 
 	if (!util.TraceLine(data).Hit) then

@@ -11,6 +11,14 @@ PLUGIN.name = "Player Acts"
 PLUGIN.description = "Adds animations that can be performed by certain models."
 PLUGIN.author = "`impulse | Modified by Frosty"
 
+ix.lang.Add("en", {
+	actPlacementHint = "LMB: Confirm | RMB: Cancel | Scroll: Rotate"
+})
+
+ix.lang.Add("ko", {
+	actPlacementHint = "좌클릭: 확정 | 우클릭: 취소 | 휠: 회전"
+})
+
 ix.act = ix.act or {}
 ix.act.stored = ix.act.stored or {}
 

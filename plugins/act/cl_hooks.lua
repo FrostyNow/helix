@@ -256,16 +256,19 @@ function PLUGIN:Think()
 		ghostEntity:SetPos(trace.HitPos)
 		ghostEntity:SetAngles(Angle(0, placementAngle, 0))
 
-		-- Collision check: make sure the ghost isn't clipping through props or the world
+		-- General collision check
 		local checkTrace = util.TraceHull({
 			start = trace.HitPos + Vector(0, 0, 1),
 			endpos = trace.HitPos + Vector(0, 0, 1),
-			mins = Vector(-15, -15, 2), -- slightly smaller to avoid false positives with ground
-			maxs = Vector(15, 15, 70),
+			mins = Vector(-14, -14, 2),
+			maxs = Vector(14, 14, 70),
 			filter = {client, ghostEntity}
 		})
 
-		-- Path validation: Cannot phase through walls (Client preview)
+		-- Allow overlapping with simple props (like chairs)
+		local bCollisionHit = checkTrace.HitWorld or (IsValid(checkTrace.Entity) and (checkTrace.Entity:IsPlayer() or checkTrace.Entity:IsNPC()))
+
+		-- Path validation: Cannot phase through walls
 		local pathTrace = util.TraceHull({
 			start = client:GetPos() + Vector(0, 0, 10),
 			endpos = trace.HitPos + Vector(0, 0, 10),
@@ -274,7 +277,22 @@ function PLUGIN:Think()
 			filter = {client, ghostEntity}
 		})
 
-		placementValid = !checkTrace.Hit and !pathTrace.Hit
+		-- Act-specific check (e.g. wall requirement)
+		local bActCheckPass = true
+		local classes = ix.act.stored[placementAct]
+		if (classes) then
+			local modelClass = ix.anim.GetModelClass(client:GetModel())
+			local data = classes[modelClass]
+
+			if (data) then
+				local sequence = data.sequence[placementVariant]
+				if (istable(sequence) and sequence.check) then
+					bActCheckPass = !sequence.check(client, trace.HitPos, Angle(0, placementAngle, 0))
+				end
+			end
+		end
+
+		placementValid = !bCollisionHit and !pathTrace.Hit and bActCheckPass
 	end
 end
 
@@ -295,7 +313,7 @@ end
 
 function PLUGIN:HUDPaint()
 	if (IsValid(ghostEntity)) then
-		local text = "LMB: Confirm | RMB: Cancel | Scroll: Rotate"
+		local text = L("actPlacementHint")
 		surface.SetFont("ixMediumFont")
 		local w, h = surface.GetTextSize(text)
 		

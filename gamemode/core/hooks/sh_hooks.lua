@@ -574,7 +574,12 @@ function GM:CanTransferItem(itemObject, curInv, inventory)
 			local owner = itemObject:GetOwner()
 
 			if (IsValid(owner)) then
-				owner:NotifyLocalized("nestedBags")
+				local currentTime = CurTime()
+
+				if ((owner.ixNestedBagNotify or 0) < currentTime) then
+					owner:NotifyLocalized("nestedBags")
+					owner.ixNestedBagNotify = currentTime + 5
+				end
 			end
 
 			return false

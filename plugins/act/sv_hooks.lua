@@ -85,7 +85,9 @@ net.Receive("ixActRequest", function(len, client)
 		filter = client
 	})
 
-	if (checkTrace.Hit) then
+	local bCollisionHit = checkTrace.HitWorld or (IsValid(checkTrace.Entity) and (checkTrace.Entity:IsPlayer() or checkTrace.Entity:IsNPC()))
+
+	if (bCollisionHit) then
 		client:NotifyLocalized("invalidPlacement")
 		return
 	end
@@ -123,7 +125,7 @@ net.Receive("ixActRequest", function(len, client)
 	-- Handle sequence data (offset, check, etc)
 	if (istable(mainSequence)) then
 		if (mainSequence.check) then
-			local result = mainSequence.check(client)
+			local result = mainSequence.check(client, pos, ang)
 			if (result) then
 				client:NotifyLocalized(result)
 				return

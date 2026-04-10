@@ -32,7 +32,7 @@ ITEM.functions.use = {
 		local client = item.player
 		local rounds = item:GetData("rounds", item.ammoAmount)
 		local currentAmmo = client:GetAmmoCount(item.ammo)
-		local maxAmmo = game.GetAmmoMax(item.ammo)
+		local maxAmmo = game.GetAmmoMax(game.GetAmmoID(item.ammo))
 
 		if (maxAmmo ~= -1 and currentAmmo >= maxAmmo) then
 			client:NotifyLocalized("maxAmmoReached")
@@ -67,7 +67,7 @@ ITEM.functions.useall = {
 		local client = item.player
 		local rounds = item:GetData("rounds", item.ammoAmount)
 		local currentAmmo = client:GetAmmoCount(item.ammo)
-		local maxAmmo = game.GetAmmoMax(item.ammo)
+		local maxAmmo = game.GetAmmoMax(game.GetAmmoID(item.ammo))
 
 		if (maxAmmo ~= -1 and currentAmmo >= maxAmmo) then
 			client:NotifyLocalized("maxAmmoReached")

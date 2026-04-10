@@ -53,12 +53,7 @@ function PLUGIN:OnCharacterFallover(client)
 	end
 end
 
-net.Receive("ixActRequest", function(len, client)
-	local actID = net.ReadString()
-	local variant = net.ReadUInt(8)
-	local pos = net.ReadVector()
-	local ang = net.ReadAngle()
-
+function PLUGIN:PerformAct(client, actID, variant, pos, ang, bNoVerify)
 	local classes = ix.act.stored[actID]
 	if (!classes) then return end
 
@@ -70,52 +65,76 @@ net.Receive("ixActRequest", function(len, client)
 		return
 	end
 
-	-- Distance validation (to prevent teleporting across the map)
-	if (client:GetPos():DistToSqr(pos) > 100 * 100) then
-		client:NotifyLocalized("tooFar")
-		return
-	end
+	if (!bNoVerify) then
+		-- Distance validation (to prevent teleporting across the map)
+		if (client:GetPos():DistToSqr(pos) > 100 * 100) then
+			client:NotifyLocalized("tooFar")
+			return
+		end
+		
+		-- Height validation (cannot jump to very high or very low places)
+		if (math.abs(pos.z - client:GetPos().z) > 60) then
+			client:NotifyLocalized("invalidPlacement")
+			return
+		end
 
-	-- Collision validation: target must be clear (Slightly relaxed hull for sync tolerance)
-	local checkTrace = util.TraceHull({
-		start = pos + Vector(0, 0, 5),
-		endpos = pos + Vector(0, 0, 5),
-		mins = Vector(-13, -13, 0),
-		maxs = Vector(13, 13, 65),
-		filter = client
-	})
+		local data = classes[modelClass]
+		local mainSequence = data.sequence[variant]
+		local bIgnoreCollision = false
 
-	local bCollisionHit = checkTrace.HitWorld or (IsValid(checkTrace.Entity) and (checkTrace.Entity:IsPlayer() or checkTrace.Entity:IsNPC()))
+		if (istable(mainSequence) and mainSequence.ignoreCollision) then
+			bIgnoreCollision = true
+		end
 
-	if (bCollisionHit) then
-		client:NotifyLocalized("invalidPlacement")
-		return
-	end
+		local checkTrace
+		if (bIgnoreCollision) then
+			-- Relaxed collision: Only check upper core (Z=25 to Z=60) to allow sitting on seats but prevent hiding in walls/crates
+			checkTrace = util.TraceHull({
+				start = pos + Vector(0, 0, 25),
+				endpos = pos + Vector(0, 0, 25),
+				mins = Vector(-6, -6, 0),
+				maxs = Vector(6, 6, 35),
+				filter = client
+			})
+		else
+			-- Strict collision: Check full body
+			checkTrace = util.TraceHull({
+				start = pos + Vector(0, 0, 5),
+				endpos = pos + Vector(0, 0, 5),
+				mins = Vector(-12, -12, 0),
+				maxs = Vector(12, 12, 60),
+				filter = client
+			})
+		end
 
-	-- Path validation: Cannot phase through walls (Slightly relaxed hull)
-	local pathTrace = util.TraceHull({
-		start = client:GetPos() + Vector(0, 0, 10),
-		endpos = pos + Vector(0, 0, 10),
-		mins = Vector(-10, -10, 5),
-		maxs = Vector(10, 10, 55),
-		filter = client
-	})
+		if (checkTrace.StartSolid or (IsValid(checkTrace.Entity) and (checkTrace.Entity:IsPlayer() or checkTrace.Entity:IsNPC()))) then
+			client:NotifyLocalized("invalidPlacement")
+			return
+		end
 
-	if (pathTrace.Hit) then
-		client:NotifyLocalized("invalidPath")
-		return
-	end
+		-- Path validation: Cannot phase through walls (simple line trace)
+		local pathTrace = util.TraceLine({
+			start = client:EyePos(),
+			endpos = pos + Vector(0, 0, 10),
+			filter = client
+		})
 
-	-- Ground check: Slightly more generous search range
-	local groundTrace = util.TraceLine({
-		start = pos + Vector(0, 0, 15),
-		endpos = pos - Vector(0, 0, 30),
-		filter = client
-	})
+		if (pathTrace.Hit) then
+			client:NotifyLocalized("invalidPath")
+			return
+		end
 
-	if (!groundTrace.Hit) then
-		client:NotifyLocalized("invalidPlacement")
-		return
+		-- Ground check: Slightly more generous search range
+		local groundTrace = util.TraceLine({
+			start = pos + Vector(0, 0, 15),
+			endpos = pos - Vector(0, 0, 30),
+			filter = client
+		})
+
+		if (!groundTrace.Hit) then
+			client:NotifyLocalized("invalidPlacement")
+			return
+		end
 	end
 
 	local data = classes[modelClass]
@@ -132,10 +151,9 @@ net.Receive("ixActRequest", function(len, client)
 			end
 		end
 
-		-- We'll use the user-provided position and angle instead of the default offset logic
-		-- unless the user specifically wanted the offset to still apply?
-		-- Actually, the user's intent is that THEY place the model.
-		-- So we should use the provided pos/ang.
+		if (mainSequence.offset) then
+			pos = pos + mainSequence.offset(client)
+		end
 
 		mainDuration = mainSequence.duration
 		mainSequence = mainSequence[1]
@@ -184,4 +202,13 @@ net.Receive("ixActRequest", function(len, client)
 	net.Send(client)
 
 	client.ixNextAct = CurTime() + 4
+end
+
+net.Receive("ixActRequest", function(len, client)
+	local actID = net.ReadString()
+	local variant = net.ReadUInt(8)
+	local pos = net.ReadVector()
+	local ang = net.ReadAngle()
+
+	PLUGIN:PerformAct(client, actID, variant, pos, ang, false)
 end)

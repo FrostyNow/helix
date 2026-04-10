@@ -25,7 +25,7 @@ function PLUGIN:SetupActs()
 	-- sit
 	ix.act.Register("Sit", {"citizen_male", "citizen_female"}, {
 		start = {"idle_to_sit_ground", "idle_to_sit_chair"},
-		sequence = {"sit_ground", "sit_chair"},
+		sequence = {"sit_ground", {"sit_chair", ignoreCollision = true}},
 		finish = {
 			{"sit_ground_to_idle", duration = 2.1},
 			""
@@ -42,7 +42,8 @@ function PLUGIN:SetupActs()
 			end}
 		},
 		untimed = true,
-		idle = true
+		idle = true,
+		noGhost = true
 	})
 
 	ix.act.Register("Sit", "vortigaunt", {
@@ -55,26 +56,31 @@ function PLUGIN:SetupActs()
 	ix.act.Register("Stand", "citizen_male", {
 		sequence = {"lineidle01", "lineidle02", "lineidle03", "lineidle04"},
 		untimed = true,
-		idle = true
+		idle = true,
+		noGhost = true
 	})
 
 	ix.act.Register("Stand", "citizen_female", {
 		sequence = {"lineidle01", "lineidle02", "lineidle03"},
 		untimed = true,
-		idle = true
+		idle = true,
+		noGhost = true
 	})
 
 	ix.act.Register("Stand", "metrocop", {
-		sequence = "plazathreat2"
+		sequence = "plazathreat2",
+		noGhost = true
 	})
 
 	-- cheer
 	ix.act.Register("Cheer", "citizen_male", {
-		sequence = {{"cheer1", duration = 1.6}, "cheer2", "wave_smg1"}
+		sequence = {{"cheer1", duration = 1.6}, "cheer2", "wave_smg1"},
+		noGhost = true
 	})
 
 	ix.act.Register("Cheer", "citizen_female", {
-		sequence = {"cheer1", "wave_smg1"}
+		sequence = {"cheer1", "wave_smg1"},
+		noGhost = true
 	})
 
 	-- lean
@@ -86,13 +92,15 @@ function PLUGIN:SetupActs()
 			{"plazaidle2", check = FacingWallBack}
 		},
 		untimed = true,
-		idle = true
+		idle = true,
+		noGhost = true
 	})
 
 	ix.act.Register("Lean", {"metrocop"}, {
 		sequence = {{"idle_baton", check = FacingWallBack}, "busyidle2"},
 		untimed = true,
-		idle = true
+		idle = true,
+		noGhost = true
 	})
 
 	-- injured
@@ -118,7 +126,8 @@ function PLUGIN:SetupActs()
 			end},
 			"spreadwallidle"
 		},
-		untimed = true
+		untimed = true,
+		noGhost = true
 	})
 
 	ix.act.Register("Arrest", "citizen_male", {
@@ -129,28 +138,33 @@ function PLUGIN:SetupActs()
 	-- threat
 	ix.act.Register("Threat", "metrocop", {
 		sequence = "plazathreat1",
+		noGhost = true
 	})
 
 	-- deny
 	ix.act.Register("Deny", "metrocop", {
 		sequence = "harassfront2",
+		noGhost = true
 	})
 
 	-- motion
 	ix.act.Register("Motion", "metrocop", {
-		sequence = {"motionleft", "motionright", "luggagewarn"}
+		sequence = {"motionleft", "motionright", "luggagewarn"},
+		noGhost = true
 	})
 
 	-- wave
 	ix.act.Register("Wave", {"citizen_male", "citizen_female"}, {
-		sequence = {{"wave", duration = 2.75}, {"wave_close", duration = 1.75}}
+		sequence = {{"wave", duration = 2.75}, {"wave_close", duration = 1.75}},
+		noGhost = true
 	})
 
 	-- pant
 	ix.act.Register("Pant", {"citizen_male", "citizen_female"}, {
 		start = {"d2_coast03_postbattle_idle02_entry", "d2_coast03_postbattle_idle01_entry"},
 		sequence = {"d2_coast03_postbattle_idle02", {"d2_coast03_postbattle_idle01", check = FacingWall}},
-		untimed = true
+		untimed = true,
+		noGhost = true
 	})
 
 	-- window
@@ -166,34 +180,42 @@ function PLUGIN:SetupActs()
 
 	ix.act.Register("Salute", "player", {
 		sequence = "ACT_GMOD_TAUNT_SALUTE",
+		noGhost = true
 	})
 
 	ix.act.Register("Advance", "player", {
 		sequence = "ACT_SIGNAL_ADVANCE",
+		noGhost = true
 	})
 
 	ix.act.Register("Foward", "player", {
 		sequence = "ACT_SIGNAL_FOWARD",
+		noGhost = true
 	})
 
 	ix.act.Register("Regroup", "player", {
 		sequence = "ACT_SIGNAL_GROUP",
+		noGhost = true
 	})
 
 	ix.act.Register("Halt", "player", {
 		sequence = "ACT_SIGNAL_HALT",
+		noGhost = true
 	})
 
 	ix.act.Register("Left", "player", {
 		sequence = "ACT_SIGNAL_LEFT",
+		noGhost = true
 	})
 
 	ix.act.Register("Right", "player", {
 		sequence = "ACT_SIGNAL_RIGHT",
+		noGhost = true
 	})
 
 	ix.act.Register("Cover", "player", {
 		sequence = "ACT_SIGNAL_TAKECOVER",
+		noGhost = true
 	})
 	
 	ix.act.Register("Sit", "player", {
@@ -209,56 +231,69 @@ function PLUGIN:SetupActs()
 		sequence = {"ACT_BUSY_LEAN_BACK", check = FacingWallBack},
 		finish = {"ACT_BUSY_LEAN_BACK_EXIT", duration = 2.1},
 		untimed = true,
-		idle = true
+		idle = true,
+		noGhost = true
 	})
 
 	ix.act.Register("TypeConsole", "overwatch", {
 		sequence = "console_type_loop",
 		untimed = true,
+		noGhost = true
 	})
 
 	ix.act.Register("Advance", "overwatch", {
 		sequence = "signal_advance",
+		noGhost = true
 	})
 
 	ix.act.Register("Forward", "overwatch", {
 		sequence = "signal_forward",
+		noGhost = true
 	})
 
 	ix.act.Register("Regroup", "overwatch", {
 		sequence = "signal_group",
+		noGhost = true
 	})
 
 	ix.act.Register("Halt", "overwatch", {
 		sequence = "signal_halt",
+		noGhost = true
 	})
 
 	ix.act.Register("Left", "overwatch", {
 		sequence = "signal_left",
+		noGhost = true
 	})
 
 	ix.act.Register("Right", "overwatch", {
 		sequence = "signal_right",
+		noGhost = true
 	})
 
 	ix.act.Register("Cover", "overwatch", {
 		sequence = "signal_takecover",
+		noGhost = true
 	})
 
 	ix.act.Register("Point", "metrocop", {
 		sequence = "point",
+		noGhost = true
 	})
 
 	ix.act.Register("Block", "metrocop", {
 		sequence = "blockentry",
 		untimed = true,
+		noGhost = true
 	})
 
 	ix.act.Register("Startle", "metrocop", {
 		sequence = "canal5breact1",
+		noGhost = true
 	})
 
 	ix.act.Register("Warn", "metrocop", {
 		sequence = "luggagewarn",
+		noGhost = true
 	})
 end

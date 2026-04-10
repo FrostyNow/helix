@@ -256,29 +256,10 @@ function PLUGIN:Think()
 		ghostEntity:SetPos(trace.HitPos)
 		ghostEntity:SetAngles(Angle(0, placementAngle, 0))
 
-		-- General collision check
-		local checkTrace = util.TraceHull({
-			start = trace.HitPos + Vector(0, 0, 1),
-			endpos = trace.HitPos + Vector(0, 0, 1),
-			mins = Vector(-14, -14, 2),
-			maxs = Vector(14, 14, 70),
-			filter = {client, ghostEntity}
-		})
+		local bHeightPass = math.abs(trace.HitPos.z - client:GetPos().z) <= 60
 
-		-- Allow overlapping with simple props (like chairs)
-		local bCollisionHit = checkTrace.HitWorld or (IsValid(checkTrace.Entity) and (checkTrace.Entity:IsPlayer() or checkTrace.Entity:IsNPC()))
-
-		-- Path validation: Cannot phase through walls
-		local pathTrace = util.TraceHull({
-			start = client:GetPos() + Vector(0, 0, 10),
-			endpos = trace.HitPos + Vector(0, 0, 10),
-			mins = Vector(-12, -12, 0),
-			maxs = Vector(12, 12, 60),
-			filter = {client, ghostEntity}
-		})
-
-		-- Act-specific check (e.g. wall requirement)
 		local bActCheckPass = true
+		local bIgnoreCollision = false
 		local classes = ix.act.stored[placementAct]
 		if (classes) then
 			local modelClass = ix.anim.GetModelClass(client:GetModel())
@@ -286,13 +267,51 @@ function PLUGIN:Think()
 
 			if (data) then
 				local sequence = data.sequence[placementVariant]
-				if (istable(sequence) and sequence.check) then
-					bActCheckPass = !sequence.check(client, trace.HitPos, Angle(0, placementAngle, 0))
+				if (istable(sequence)) then
+					if (sequence.check) then
+						bActCheckPass = !sequence.check(client, trace.HitPos, Angle(0, placementAngle, 0))
+					end
+					if (sequence.ignoreCollision) then
+						bIgnoreCollision = true
+					end
 				end
 			end
 		end
 
-		placementValid = !bCollisionHit and !pathTrace.Hit and bActCheckPass
+		local checkTrace
+		if (bIgnoreCollision) then
+			-- Relaxed collision
+			checkTrace = util.TraceHull({
+				start = trace.HitPos + Vector(0, 0, 25),
+				endpos = trace.HitPos + Vector(0, 0, 25),
+				mins = Vector(-6, -6, 0),
+				maxs = Vector(6, 6, 35),
+				filter = {client, ghostEntity}
+			})
+		else
+			-- General collision check
+			checkTrace = util.TraceHull({
+				start = trace.HitPos + Vector(0, 0, 5),
+				endpos = trace.HitPos + Vector(0, 0, 5),
+				mins = Vector(-12, -12, 0),
+				maxs = Vector(12, 12, 60),
+				filter = {client, ghostEntity}
+			})
+		end
+
+		-- Allow overlapping with simple props (like chairs) if they aren't players/NPCs, just check if we are stuck
+		local bCollisionHit = checkTrace.StartSolid or (IsValid(checkTrace.Entity) and (checkTrace.Entity:IsPlayer() or checkTrace.Entity:IsNPC()))
+
+		-- Path validation: Cannot phase through walls (simple line trace)
+		local pathTrace = util.TraceLine({
+			start = client:EyePos(),
+			endpos = trace.HitPos + Vector(0, 0, 10),
+			filter = {client, ghostEntity}
+		})
+
+
+
+		placementValid = !bCollisionHit and !pathTrace.Hit and bActCheckPass and bHeightPass
 	end
 end
 

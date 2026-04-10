@@ -149,6 +149,14 @@ function PLUGIN:PostSetupActs()
 				return error
 			end
 
+			-- Check if this act bypasses the ghost placement
+			if (classes.noGhost or classes[modelClass].noGhost) then
+				if (SERVER) then
+					PLUGIN:PerformAct(client, act, variant, client:GetPos(), client:GetAngles())
+				end
+				return
+			end
+
 			net.Start("ixActPlacementStart")
 				net.WriteString(act)
 				net.WriteUInt(variant, 8)

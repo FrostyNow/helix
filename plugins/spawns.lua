@@ -28,7 +28,13 @@ function PLUGIN:PlayerLoadout(client)
 				end
 			end
 
-			points = points[className] or points["default"]
+			local classSpawns = points[className]
+
+			if (!classSpawns or table.IsEmpty(classSpawns)) then
+				classSpawns = points["default"]
+			end
+
+			points = classSpawns
 
 			if (points and !table.IsEmpty(points)) then
 				local position = points[ math.random( #points ) ]
@@ -60,11 +66,13 @@ ix.command.Add("SpawnAdd", {
 		bit.bor(ix.type.text, ix.type.optional)
 	},
 	OnRun = function(self, client, name, class)
-		local info = ix.faction.indices[name:lower()]
+		local info = ix.faction.teams[name:lower()]
 		local info2
 		local faction
 
-		if (!info) then
+		if (info) then
+			faction = info.uniqueID
+		else
 			for _, v in ipairs(ix.faction.indices) do
 				if (ix.util.StringMatches(v.uniqueID, name) or ix.util.StringMatches(L(v.name, client), name)) then
 					faction = v.uniqueID

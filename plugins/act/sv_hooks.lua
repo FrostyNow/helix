@@ -86,6 +86,18 @@ function PLUGIN:PerformAct(client, actID, variant, pos, ang, bNoVerify)
 			bIgnoreCollision = true
 		end
 
+		local checkFilter = function(ent)
+			if (ent == client) then
+				return false
+			end
+
+			if (bIgnoreCollision and IsValid(ent) and ent:GetClass():find("prop_")) then
+				return false
+			end
+
+			return true
+		end
+
 		local checkTrace
 		if (bIgnoreCollision) then
 			-- Relaxed collision: Only check upper core (Z=25 to Z=60) to allow sitting on seats but prevent hiding in walls/crates
@@ -94,7 +106,7 @@ function PLUGIN:PerformAct(client, actID, variant, pos, ang, bNoVerify)
 				endpos = pos + Vector(0, 0, 25),
 				mins = Vector(-6, -6, 0),
 				maxs = Vector(6, 6, 35),
-				filter = client
+				filter = checkFilter
 			})
 		else
 			-- Strict collision: Check full body
@@ -103,7 +115,7 @@ function PLUGIN:PerformAct(client, actID, variant, pos, ang, bNoVerify)
 				endpos = pos + Vector(0, 0, 5),
 				mins = Vector(-12, -12, 0),
 				maxs = Vector(12, 12, 60),
-				filter = client
+				filter = checkFilter
 			})
 		end
 
@@ -116,7 +128,7 @@ function PLUGIN:PerformAct(client, actID, variant, pos, ang, bNoVerify)
 		local pathTrace = util.TraceLine({
 			start = client:EyePos(),
 			endpos = pos + Vector(0, 0, 10),
-			filter = client
+			filter = checkFilter
 		})
 
 		if (pathTrace.Hit) then

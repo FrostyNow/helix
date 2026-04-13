@@ -208,20 +208,13 @@ function PLUGIN:PlayerBindPress(client, bind, bPressed)
 					return true
 				end
 
-				local trace = util.TraceHull({
-					start = client:EyePos(),
-					endpos = client:EyePos() + client:GetForward() * 100,
-					filter = {client, ghostEntity},
-					mins = Vector(-16, -16, 0),
-					maxs = Vector(16, 16, 72)
-				})
-
+				local pos = ghostEntity:GetPos()
 				local angles = Angle(0, placementAngle, 0)
 
 				net.Start("ixActRequest")
 					net.WriteString(placementAct)
 					net.WriteUInt(placementVariant, 8)
-					net.WriteVector(trace.HitPos)
+					net.WriteVector(pos)
 					net.WriteAngle(angles)
 				net.SendToServer()
 
@@ -245,12 +238,28 @@ end
 function PLUGIN:Think()
 	if (IsValid(ghostEntity)) then
 		local client = LocalPlayer()
+		local bActCheckPass = true
+		local bIgnoreCollision = false
+		local classes = ix.act.stored[placementAct]
+		local modelClass = ix.anim.GetModelClass(client:GetModel())
+		local data = classes and classes[modelClass]
+
+		if (data) then
+			local sequence = data.sequence[placementVariant]
+
+			if (istable(sequence)) then
+				if (sequence.ignoreCollision) then
+					bIgnoreCollision = true
+				end
+			end
+		end
+
 		local trace = util.TraceHull({
 			start = client:EyePos(),
 			endpos = client:EyePos() + client:GetForward() * 100,
 			filter = {client, ghostEntity},
-			mins = Vector(-16, -16, 0),
-			maxs = Vector(16, 16, 72)
+			mins = bIgnoreCollision and Vector(-8, -8, 0) or Vector(-16, -16, 0),
+			maxs = bIgnoreCollision and Vector(8, 8, 32) or Vector(16, 16, 72)
 		})
 
 		ghostEntity:SetPos(trace.HitPos)
@@ -258,27 +267,28 @@ function PLUGIN:Think()
 
 		local bHeightPass = math.abs(trace.HitPos.z - client:GetPos().z) <= 60
 
-		local bActCheckPass = true
-		local bIgnoreCollision = false
-		local classes = ix.act.stored[placementAct]
-		if (classes) then
-			local modelClass = ix.anim.GetModelClass(client:GetModel())
-			local data = classes[modelClass]
+		if (data) then
+			local sequence = data.sequence[placementVariant]
 
-			if (data) then
-				local sequence = data.sequence[placementVariant]
-				if (istable(sequence)) then
-					if (sequence.check) then
-						bActCheckPass = !sequence.check(client, trace.HitPos, Angle(0, placementAngle, 0))
-					end
-					if (sequence.ignoreCollision) then
-						bIgnoreCollision = true
-					end
-				end
+			if (istable(sequence) and sequence.check) then
+				local result = sequence.check(client, trace.HitPos, Angle(0, placementAngle, 0))
+				bActCheckPass = !result
 			end
 		end
 
 		local checkTrace
+		local checkFilter = function(ent)
+			if (ent == client or ent == ghostEntity) then
+				return false
+			end
+
+			if (bIgnoreCollision and IsValid(ent) and ent:GetClass():find("prop_")) then
+				return false
+			end
+
+			return true
+		end
+
 		if (bIgnoreCollision) then
 			-- Relaxed collision
 			checkTrace = util.TraceHull({
@@ -286,7 +296,7 @@ function PLUGIN:Think()
 				endpos = trace.HitPos + Vector(0, 0, 25),
 				mins = Vector(-6, -6, 0),
 				maxs = Vector(6, 6, 35),
-				filter = {client, ghostEntity}
+				filter = checkFilter
 			})
 		else
 			-- General collision check
@@ -295,7 +305,7 @@ function PLUGIN:Think()
 				endpos = trace.HitPos + Vector(0, 0, 5),
 				mins = Vector(-12, -12, 0),
 				maxs = Vector(12, 12, 60),
-				filter = {client, ghostEntity}
+				filter = checkFilter
 			})
 		end
 
@@ -306,7 +316,7 @@ function PLUGIN:Think()
 		local pathTrace = util.TraceLine({
 			start = client:EyePos(),
 			endpos = trace.HitPos + Vector(0, 0, 10),
-			filter = {client, ghostEntity}
+			filter = checkFilter
 		})
 
 

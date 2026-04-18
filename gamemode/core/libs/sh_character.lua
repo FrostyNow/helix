@@ -421,12 +421,23 @@ do
 		index = 3,
 		OnSet = function(character, value)
 			local client = character:GetPlayer()
+			local oldVar = character.vars.model
 
 			if (IsValid(client) and client:GetCharacter() == character) then
 				client:SetModel(value)
 			end
 
 			character.vars.model = value
+
+			if (oldVar != value) then
+				net.Start("ixCharacterVarChanged")
+					net.WriteUInt(character:GetID(), 32)
+					net.WriteString("model")
+					net.WriteType(value)
+				net.Broadcast()
+
+				hook.Run("CharacterVarChanged", character, "model", oldVar, value)
+			end
 		end,
 		OnGet = function(character, default)
 			return character.vars.model or default

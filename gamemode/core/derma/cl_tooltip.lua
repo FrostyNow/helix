@@ -412,6 +412,8 @@ function PANEL:SizeToContents()
 	local width = 0
 
 	for _, v in ipairs(self:GetChildren()) do
+		if (!v:IsVisible()) then continue end
+
 		if (v:GetWide() > width) then
 			width = v:GetWide()
 		end

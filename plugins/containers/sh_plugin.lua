@@ -38,6 +38,8 @@ ix.lang.AddTable("english", {
 	containerWashingMachineDesc = "A machine for washing clothes, sheets, and other things made of cloth.",
 	containerDeskDesc = "A table with drawers that you can work at.",
 	containerMetalDeskDesc = "A table with drawers that you can work at.",
+	containerIndestructible = "Container is now INDESTRUCTIBLE.",
+	containerDestructible = "Container is now DESTRUCTIBLE.",
 })
 
 ix.lang.AddTable("korean", {
@@ -81,6 +83,8 @@ ix.lang.AddTable("korean", {
 	containerDeskDesc = "서랍이 달린 사무용 탁자입니다.",
 	["Metal Desk"] = "금속 책상",
 	containerMetalDeskDesc = "서랍이 달린 사무용 탁자입니다.",
+	containerIndestructible = "이제 이 보관함은 부서지지 않습니다.",
+	containerDestructible = "이제 이 보관함은 부서질 수 있습니다.",
 })
 
 function ix.container.Register(model, data)
@@ -144,7 +148,8 @@ if (SERVER) then
 						v.password,
 						v:GetDisplayName(),
 						v:GetMoney(),
-						bFixed
+						bFixed,
+						v:GetNetVar("bNotDestructible", false)
 					}
 				end
 			else
@@ -246,6 +251,11 @@ if (SERVER) then
 					if (IsValid(physObject)) then
 						physObject:EnableMotion(!bFixed)
 						entity:SetFixed(bFixed)
+					end
+
+					if (v[9]) then
+						entity.bDestructible = false
+						entity:SetNetVar("bNotDestructible", true)
 					end
 				end
 			end
@@ -506,5 +516,46 @@ properties.Add("container_view", {
 				net.Send(client)
 			end
 		end
+	end
+})
+
+properties.Add("container_destructible", {
+	MenuLabel = "Toggle Destructibility",
+	Order = 401,
+	MenuIcon = "icon16/shield.png",
+
+	Filter = function(self, entity, client)
+		if (entity:GetClass() != "ix_container") then return false end
+		if (!client:IsAdmin()) then return false end
+		if (!entity:GetNetVar("bNativelyDestructible")) then return false end
+
+		return true
+	end,
+
+	Action = function(self, entity)
+		self:MsgStart()
+			net.WriteEntity(entity)
+		self:MsgEnd()
+	end,
+
+	Receive = function(self, length, client)
+		local entity = net.ReadEntity()
+
+		if (!IsValid(entity)) then return end
+		if (!self:Filter(entity, client)) then return end
+
+		local bCurrent = entity:GetNetVar("bNotDestructible", false)
+		local bNew = !bCurrent
+
+		entity:SetNetVar("bNotDestructible", bNew)
+		entity.bDestructible = !bNew
+
+		if (bNew) then
+			client:NotifyLocalized("containerIndestructible")
+		else
+			client:NotifyLocalized("containerDestructible")
+		end
+
+		ix.log.Add(client, "containerName", bNew and "Indestructible" or "Destructible", entity:GetInventory() and entity:GetInventory():GetID() or 0, true)
 	end
 })

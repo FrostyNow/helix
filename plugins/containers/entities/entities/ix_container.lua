@@ -22,7 +22,8 @@ if (SERVER) then
 		self.Sessions = {}
 		self.PasswordAttempts = {}
 
-		local definition = ix.container.stored[self:GetModel():lower()]
+		local model = self:GetModel()
+		local definition = ix.container.stored[model:lower()]
 
 		if (definition) then
 			self:SetDisplayName(definition.name)
@@ -33,6 +34,76 @@ if (SERVER) then
 		if (IsValid(physObj)) then
 			physObj:EnableMotion(true)
 			physObj:Wake()
+		end
+
+		ix.container.healthCache = ix.container.healthCache or {}
+		local health = ix.container.healthCache[model]
+
+		if (!health) then
+			local dummy = ents.Create("prop_physics")
+			dummy:SetModel(model)
+			dummy:Spawn()
+
+			health = dummy:Health() or 0
+			ix.container.healthCache[model] = health
+			dummy:Remove()
+		end
+
+		if (health > 0) then
+			self:SetHealth(health)
+			self:SetMaxHealth(health)
+			self:SetNetVar("bNativelyDestructible", true)
+			if (!self:GetNetVar("bNotDestructible")) then
+				self.bDestructible = true
+			end
+		end
+	end
+
+	function ENT:OnTakeDamage(dmginfo)
+		if (self.bDestructible and !self.bDestroying) then
+			self:SetHealth(self:Health() - dmginfo:GetDamage())
+
+			if (self:Health() <= 0) then
+				self.bDestroying = true
+
+				local gibs = ents.Create("prop_physics")
+				gibs:SetModel(self:GetModel())
+				gibs:SetPos(self:GetPos())
+				gibs:SetAngles(self:GetAngles())
+				gibs:Spawn()
+				gibs:Fire("break")
+
+				local inventory = self:GetInventory()
+
+				if (inventory) then
+					local items = inventory:GetItems()
+
+					for _, v in pairs(items) do
+						v.invID = 0
+
+						local query = mysql:Update("ix_items")
+							query:Update("inventory_id", 0)
+							query:Where("item_id", v.id)
+						query:Execute()
+
+						ix.item.inventories[0] = ix.item.inventories[0] or {}
+						ix.item.inventories[0][v.id] = v
+
+						local bEnt = v:Spawn(self:LocalToWorld(self:OBBCenter()) + VectorRand() * 5)
+
+						if (IsValid(bEnt)) then
+							local phys = bEnt:GetPhysicsObject()
+
+							if (IsValid(phys)) then
+								phys:Wake()
+								phys:ApplyForceCenter(VectorRand() * 50)
+							end
+						end
+					end
+				end
+
+				self:Remove()
+			end
 		end
 	end
 

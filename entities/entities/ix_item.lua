@@ -138,6 +138,7 @@ if (SERVER) then
 		if (self:Health() <= 0 and !self.ixIsDestroying) then
 			self.ixIsDestroying = true
 			self.ixDamageInfo = {damageInfo:GetAttacker(), damage, damageInfo:GetInflictor()}
+			self:GibBreakClient(VectorRand() * 100)
 			self:Remove()
 		end
 	end

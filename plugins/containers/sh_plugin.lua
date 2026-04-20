@@ -40,6 +40,9 @@ ix.lang.AddTable("english", {
 	containerMetalDeskDesc = "A table with drawers that you can work at.",
 	containerIndestructible = "Container is now INDESTRUCTIBLE.",
 	containerDestructible = "Container is now DESTRUCTIBLE.",
+	containerStatus70 = "It is slightly damaged.",
+	containerStatus50 = "It is heavily damaged.",
+	containerStatus30 = "It is severely damaged and about to break.",
 })
 
 ix.lang.AddTable("korean", {
@@ -85,6 +88,9 @@ ix.lang.AddTable("korean", {
 	containerMetalDeskDesc = "서랍이 달린 사무용 탁자입니다.",
 	containerIndestructible = "이제 이 보관함은 부서지지 않습니다.",
 	containerDestructible = "이제 이 보관함은 부서질 수 있습니다.",
+	containerStatus70 = "조금 파손되었습니다.",
+	containerStatus50 = "크게 파손되었습니다.",
+	containerStatus30 = "심각하게 파손되어 금방이라도 부서질 것 같습니다.",
 })
 
 function ix.container.Register(model, data)

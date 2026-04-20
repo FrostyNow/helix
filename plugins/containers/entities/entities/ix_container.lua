@@ -52,6 +52,8 @@ if (SERVER) then
 		if (health > 0) then
 			self:SetHealth(health)
 			self:SetMaxHealth(health)
+			self:SetNetVar("maxHealth", health)
+			self:SetNetVar("health", health)
 			self:SetNetVar("bNativelyDestructible", true)
 			if (!self:GetNetVar("bNotDestructible")) then
 				self.bDestructible = true
@@ -61,17 +63,14 @@ if (SERVER) then
 
 	function ENT:OnTakeDamage(dmginfo)
 		if (self.bDestructible and !self.bDestroying) then
-			self:SetHealth(self:Health() - dmginfo:GetDamage())
+			local newHealth = math.max(0, self:Health() - dmginfo:GetDamage())
+			self:SetHealth(newHealth)
+			self:SetNetVar("health", newHealth)
 
-			if (self:Health() <= 0) then
+			if (newHealth <= 0) then
 				self.bDestroying = true
 
-				local gibs = ents.Create("prop_physics")
-				gibs:SetModel(self:GetModel())
-				gibs:SetPos(self:GetPos())
-				gibs:SetAngles(self:GetAngles())
-				gibs:Spawn()
-				gibs:Fire("break")
+				self:GibBreakClient(VectorRand() * 100)
 
 				local inventory = self:GetInventory()
 
@@ -251,6 +250,67 @@ else
 			local description = tooltip:AddRow("description")
 			description:SetText(L(definition.description))
 			description:SizeToContents()
+		end
+
+		if (self:GetNetVar("bNativelyDestructible") and !self:GetNetVar("bNotDestructible")) then
+			local status = tooltip:AddRow("status")
+			status:SetVisible(false)
+
+			local oldThink = tooltip.Think
+			tooltip.Think = function(pnl)
+				if (oldThink) then oldThink(pnl) end
+				if (!IsValid(self) or !IsValid(status)) then return end
+
+				local health = self:GetNetVar("health", self:Health())
+				local maxHealth = self:GetNetVar("maxHealth", self:GetMaxHealth())
+
+				if (health and maxHealth and maxHealth > 0) then
+					local percent = health / maxHealth
+
+					local statusText
+					if (percent <= 0.3) then
+						statusText = "containerStatus30"
+					elseif (percent <= 0.5) then
+						statusText = "containerStatus50"
+					elseif (percent <= 0.7) then
+						statusText = "containerStatus70"
+					end
+
+					if (statusText) then
+						local localized = L(statusText)
+						if (status:GetText() != localized or !status:IsVisible()) then
+							status:SetText(localized)
+							status:SizeToContents()
+							status:SetVisible(true)
+							pnl:SizeToContents()
+						end
+
+						if (percent <= 0.3) then
+							status:SetBackgroundColor(Color(180, 50, 50))
+						elseif (percent <= 0.5) then
+							status:SetBackgroundColor(Color(180, 100, 50))
+						else
+							status:SetBackgroundColor(Color(180, 180, 50))
+						end
+					else
+						if (status:IsVisible()) then
+							status:SetText("")
+							status:SizeToContents()
+							status:SetVisible(false)
+							status:SetBackgroundColor(Color(0, 0, 0, 0))
+							pnl:SizeToContents()
+						end
+					end
+				else
+					if (status:IsVisible()) then
+						status:SetText("")
+						status:SizeToContents()
+						status:SetVisible(false)
+						status:SetBackgroundColor(Color(0, 0, 0, 0))
+						pnl:SizeToContents()
+					end
+				end
+			end
 		end
 	end
 end

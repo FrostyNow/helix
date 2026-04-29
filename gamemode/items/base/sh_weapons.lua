@@ -18,6 +18,11 @@ if (CLIENT) then
 			surface.SetDrawColor(110, 255, 110, 100)
 			surface.DrawRect(w - 14, h - 14, 8, 8)
 		end
+
+		local ammo = item:GetData("ammo")
+		if (ammo and ammo > 0) then
+			draw.SimpleTextOutlined(ammo, "DermaDefault", w - 5, h - 5, color_white, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 1, color_black)
+		end
 	end
 
 	function ITEM:PopulateTooltip(tooltip)
@@ -87,6 +92,53 @@ ITEM.functions.EquipUn = { -- sorry, for name order.
 
 		return !IsValid(item.entity) and IsValid(client) and item:GetData("equip") == true and
 			hook.Run("CanPlayerUnequipItem", client, item) != false
+	end
+}
+
+ITEM.functions.Unclip = {
+	name = "unclip",
+	tip = "unclipTip",
+	icon = "icon16/bullet_go.png",
+	OnRun = function(item)
+		local client = item.player
+		local weapon = client.carryWeapons and client.carryWeapons[item.weaponCategory]
+
+		if (!IsValid(weapon)) then
+			weapon = client:GetWeapon(item.class)
+		end
+
+		if (!IsValid(weapon)) then return false end
+
+		local clip = weapon:Clip1()
+		if (clip <= 0) then return false end
+
+		weapon:SetClip1(0)
+		item:SetData("ammo", 0)
+
+		local inventory = client:GetCharacter():GetInventory()
+		local bSuccess = inventory:Add(item.clip)
+
+		if (!bSuccess) then
+			weapon:SetClip1(clip)
+			item:SetData("ammo", clip)
+			client:NotifyLocalized("invFull")
+		end
+
+		return false
+	end,
+	OnCanRun = function(item)
+		local client = item.player
+
+		if (!IsValid(client) or !item.clip or item:GetData("equip") != true) then
+			return false
+		end
+
+		local weapon = client.carryWeapons and client.carryWeapons[item.weaponCategory]
+		if (!IsValid(weapon)) then
+			weapon = client:GetWeapon(item.class)
+		end
+
+		return IsValid(weapon) and weapon:Clip1() > 0
 	end
 }
 

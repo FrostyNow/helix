@@ -137,8 +137,16 @@ if (SERVER) then
 
 		if (self:Health() <= 0 and !self.ixIsDestroying) then
 			self.ixIsDestroying = true
+
+			local phys = self:GetPhysicsObject()
+			if (IsValid(phys)) then
+				local surfaceData = util.GetSurfaceData(util.GetSurfaceIndex(phys:GetMaterial()))
+				if (surfaceData and surfaceData.breakSound and surfaceData.breakSound != "") then
+					self.ixBreakSound = surfaceData.breakSound
+				end
+			end
 			self.ixDamageInfo = {damageInfo:GetAttacker(), damage, damageInfo:GetInflictor()}
-			self:GibBreakClient(VectorRand() * 100)
+			self.ixHadGibs = self:GibBreakClient(VectorRand() * 100)
 			self:Remove()
 		end
 	end
@@ -149,14 +157,16 @@ if (SERVER) then
 
 			if (itemTable) then
 				if (self.ixIsDestroying) then
-					self:EmitSound("physics/cardboard/cardboard_box_break"..math.random(1, 3)..".wav")
+					self:EmitSound(self.ixBreakSound or "physics/cardboard/cardboard_box_break"..math.random(1, 3)..".wav")
 					local position = self:LocalToWorld(self:OBBCenter())
 
-					local effect = EffectData()
-						effect:SetStart(position)
-						effect:SetOrigin(position)
-						effect:SetScale(3)
-					util.Effect("GlassImpact", effect)
+					if (!self.ixHadGibs) then
+						local effect = EffectData()
+							effect:SetStart(position)
+							effect:SetOrigin(position)
+							effect:SetScale(3)
+						util.Effect("GlassImpact", effect)
+					end
 
 					if (itemTable.OnDestroyed) then
 						itemTable:OnDestroyed(self)

@@ -72,6 +72,14 @@ if (SERVER) then
 
 				self:GibBreakClient(VectorRand() * 100)
 
+				local phys = self:GetPhysicsObject()
+				if (IsValid(phys)) then
+					local surfaceData = util.GetSurfaceData(util.GetSurfaceIndex(phys:GetMaterial()))
+					if (surfaceData and surfaceData.breakSound and surfaceData.breakSound != "") then
+						self:EmitSound(surfaceData.breakSound, 75, 100)
+					end
+				end
+
 				local inventory = self:GetInventory()
 
 				if (inventory) then

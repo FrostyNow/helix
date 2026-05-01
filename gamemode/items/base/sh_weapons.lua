@@ -116,7 +116,7 @@ ITEM.functions.Unclip = {
 		item:SetData("ammo", 0)
 
 		local inventory = client:GetCharacter():GetInventory()
-		local bSuccess = inventory:Add(item.clip)
+		local bSuccess = inventory:Add(item.clip, 1, {rounds = clip})
 
 		if (!bSuccess) then
 			weapon:SetClip1(clip)

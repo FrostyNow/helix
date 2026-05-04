@@ -379,27 +379,34 @@ function ITEM:OnLoadout()
 			end
 		end
 
-		local weapon = client:Give(self.class, true)
+		local weapon = client:GetWeapon(self.class)
+		local alreadyHad = IsValid(weapon)
+
+		if (!alreadyHad) then
+			weapon = client:Give(self.class, true)
+		end
 
 		if (IsValid(weapon)) then
 			local ammoType = weapon:GetPrimaryAmmoType()
 
-			if (!self.isGrenade) then
-				client:RemoveAmmo(weapon:Clip1(), ammoType)
+			if (!alreadyHad) then
+				if (!self.isGrenade) then
+					client:RemoveAmmo(weapon:Clip1(), ammoType)
+				end
+
+				if (self.isGrenade) then
+					weapon:SetClip1(1)
+
+					if (ammoType and ammoType != -1) then
+						client:SetAmmo(1, ammoType)
+					end
+				else
+					weapon:SetClip1(self:GetData("ammo", 0))
+				end
 			end
-			
+
 			client.carryWeapons[self.weaponCategory] = weapon
 			weapon.ixItem = self
-
-			if (self.isGrenade) then
-				weapon:SetClip1(1)
-
-				if (ammoType and ammoType != -1) then
-					client:SetAmmo(1, ammoType)
-				end
-			else
-				weapon:SetClip1(self:GetData("ammo", 0))
-			end
 
 			if (self.OnEquipWeapon) then
 				self:OnEquipWeapon(client, weapon)
